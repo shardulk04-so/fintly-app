@@ -689,6 +689,7 @@
       signInAnonymously,
       signInWithCustomToken,
       GoogleAuthProvider,
+      signInWithCredential,
       signInWithPopup,
       RecaptchaVerifier,
       signInWithPhoneNumber,
@@ -719,6 +720,8 @@
           messagingSenderId: "770749227500",
           appId: "1:770749227500:web:42ccf541cf6ca6c42520c9"
         };
+
+    const GOOGLE_WEB_CLIENT_ID = "770749227500-bcuelbshtnapo4ndmm7tnnhmvbpjuqhm.apps.googleusercontent.com";
 
     let app = null;
     let auth = null;
@@ -782,8 +785,6 @@
       startListeningForUpiNotifications() {
         if (this.isNativeAndroid() && window.Capacitor.Plugins?.FintlyUpiListener) {
           window.Capacitor.Plugins.FintlyUpiListener.addListener('upiPaymentDetected', (payload) => {
-            // Payload from Kotlin NotificationListenerService:
-            // { amount: 450, merchant: "Swiggy", upiApp: "GPay", type: "expense" | "income", timestamp: 173... }
             if (!payload || !payload.amount) return;
             const todayStr = new Date().toISOString().split('T')[0];
             state.transactions.unshift({
@@ -838,7 +839,6 @@
             showToast('Contacts Sync', 'Unable to access contacts permission', 'amber');
           }
         } else if ('contacts' in navigator && 'ContactsManager' in window) {
-          // W3C Contact Picker API fallback on supported mobile browsers
           try {
             const picked = await navigator.contacts.select(['name', 'tel'], { multiple: true });
             const colors = ['#3E82F7', '#EC4899', '#10B981', '#F59E0B', '#8B5CF6'];
@@ -911,7 +911,6 @@
     let state = defaultState();
 
     function getUserLedgerDocRef(uid) {
-      // Strictly adheres to /artifacts/{appId}/users/{userId}/{collectionName}/{docId}
       return doc(db, 'artifacts', appId, 'users', uid, 'fintly_ledger', 'main');
     }
 
@@ -975,12 +974,11 @@
     }
 
     // -----------------------------------------------------------------------
-    // 4. AUTHENTICATION FLOW (GOOGLE SIGN-IN + REAL SMS OTP VERIFICATION)
+    // 4. AUTHENTICATION FLOW (NATIVE ANDROID GOOGLE SIGN-IN + SMS OTP)
     // -----------------------------------------------------------------------
     async function bootstrapAuthSession() {
       if (!auth) return;
 
-      // Handle environment custom token if injected by host runtime
       if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
         try {
           await signInWithCustomToken(auth, __initial_auth_token);
@@ -999,7 +997,6 @@
             state.user.phoneVerified = true;
           }
 
-          // Check if user already has a verified profile in Firestore
           if (db) {
             try {
               const snap = await getDoc(getUserLedgerDocRef(user.uid));
@@ -1031,6 +1028,30 @@
       btn.disabled = true;
 
       try {
+        // 1. Native Android APK Flow (Uses Google Play Services Account Picker)
+        if (CapacitorBridge.isNativeAndroid() && window.Capacitor.Plugins?.FirebaseAuthentication) {
+          const { FirebaseAuthentication } = window.Capacitor.Plugins;
+          const result = await FirebaseAuthentication.signInWithGoogle({
+            serverClientId: GOOGLE_WEB_CLIENT_ID
+          });
+
+          if (result?.credential?.idToken) {
+            const credential = GoogleAuthProvider.credential(result.credential.idToken);
+            const userCred = await signInWithCredential(auth, credential);
+            currentUser = userCred.user;
+            state.user.name = userCred.user.displayName || result.user?.displayName || 'Fintly User';
+            state.user.email = userCred.user.email || result.user?.email || '';
+
+            document.getElementById('selected-google-email').textContent = state.user.email || 'Google Account Connected';
+            document.getElementById('auth-step-google').classList.add('hidden');
+            const otpStep = document.getElementById('auth-step-otp');
+            otpStep.classList.remove('hidden');
+            otpStep.classList.add('flex');
+            return;
+          }
+        }
+
+        // 2. Web Browser Flow
         if (auth) {
           const provider = new GoogleAuthProvider();
           const result = await signInWithPopup(auth, provider);
@@ -1038,7 +1059,6 @@
           state.user.name = result.user.displayName || 'Fintly User';
           state.user.email = result.user.email || '';
         } else {
-          // Local fallback if Firebase keys are not yet pasted
           state.user.name = 'Fintly User';
           state.user.email = 'Signed in with Google';
         }
@@ -1049,19 +1069,8 @@
         otpStep.classList.remove('hidden');
         otpStep.classList.add('flex');
       } catch (err) {
-        if (auth) {
-          try {
-            const anon = await signInAnonymously(auth);
-            currentUser = anon.user;
-            document.getElementById('selected-google-email').textContent = 'Google Auth Pending Domain';
-            document.getElementById('auth-step-google').classList.add('hidden');
-            const otpStep = document.getElementById('auth-step-otp');
-            otpStep.classList.remove('hidden');
-            otpStep.classList.add('flex');
-          } catch (_) {
-            showToast('Sign-In Notice', err.message || 'Configure Firebase Google Auth in console', 'amber');
-          }
-        }
+        console.error("Google Sign-In Error:", err);
+        showToast('Sign-In Notice', err.message || err.code || 'Google Sign-In failed', 'amber');
       } finally {
         btn.disabled = false;
       }
@@ -1101,7 +1110,6 @@
         document.querySelector('.otp-box')?.focus();
         showToast('OTP Dispatched', `Enter the 6-digit SMS code sent to +91 ${phoneVal}`, 'blue');
       } catch (err) {
-        // Fallback when testing outside configured Firebase Phone Auth domain
         document.getElementById('phone-input-section').classList.add('hidden');
         document.getElementById('otp-verify-section').classList.remove('hidden');
         document.querySelectorAll('.otp-box').forEach(b => (b.value = ''));
@@ -1118,7 +1126,6 @@
       document.getElementById('phone-input-section').classList.remove('hidden');
     };
 
-    // OTP box auto-advance & backspace navigation
     document.querySelectorAll('.otp-box').forEach((box, idx, arr) => {
       box.addEventListener('input', (e) => {
         e.target.value = e.target.value.replace(/\D/g, '');
@@ -1339,12 +1346,10 @@
       const initials = (state.user.name || 'FN').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
       document.getElementById('header-avatar-initials').textContent = initials;
 
-      // Box 1: Balance, Received, Spent
       document.getElementById('home-balance').textContent = formatINR(metrics.bankBalance);
       document.getElementById('home-total-received').textContent = '+' + formatINR(metrics.totalReceived);
       document.getElementById('home-total-spent').textContent = '-' + formatINR(metrics.totalPersonalSpent);
 
-      // Box 2: Split Summary
       document.getElementById('home-you-owe').textContent = formatINR(metrics.youOweTotal);
       document.getElementById('home-owed-to-you').textContent = formatINR(metrics.owedToYouTotal);
 
@@ -1353,7 +1358,6 @@
       document.getElementById('home-you-owe-sub').textContent = oweCount === 1 ? 'To 1 person' : `To ${oweCount} people`;
       document.getElementById('home-owed-to-you-sub').textContent = owedCount === 1 ? 'From 1 person' : `From ${owedCount} people`;
 
-      // Box 3: Weekly Relative Bar Graph (No numbers on bars, % vs prev week)
       const maxVal = Math.max(...metrics.weeklySpend.map(d => d.amount), 1);
       const currentWeekTotal = metrics.weeklySpend.reduce((acc, d) => acc + d.amount, 0);
       const diffPct = state.lastWeekTotal > 0
