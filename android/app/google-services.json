@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "770749227500",
+    "firebase_url": "https://fintly-67e64-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "fintly-67e64",
+    "storage_bucket": "fintly-67e64.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:770749227500:android:747c875bf1b85e2a2520c9",
+        "android_client_info": {
+          "package_name": "com.fintly.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "770749227500-bcuelbshtnapo4ndmm7tnnhmvbpjuqhm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCH3gvUYgbKp2guyNyEz7LQ_DL81ZHBWZo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "770749227500-bcuelbshtnapo4ndmm7tnnhmvbpjuqhm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
