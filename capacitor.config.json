@@ -1,5 +1,11 @@
 {
   "appId": "com.fintly.app",
   "appName": "Fintly",
-  "webDir": "www"
+  "webDir": "www",
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": false,
+      "providers": ["google.com"]
+    }
+  }
 }
