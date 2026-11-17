@@ -36,7 +36,6 @@
       box-sizing: border-box;
     }
 
-    /* Pin root viewport so Android WebView never double-scrolls or clips the bottom dock */
     html, body {
       position: fixed;
       inset: 0;
@@ -50,7 +49,6 @@
       color: #ffffff;
     }
 
-    /* Sleek, app-integrated custom scrollbar */
     .app-scroll {
       overflow-y: auto;
       overflow-x: hidden;
@@ -142,7 +140,7 @@
     <div id="toast-container" class="absolute left-4 right-4 z-50 pointer-events-none flex flex-col gap-2" style="top: calc(env(safe-area-inset-top) + 12px);"></div>
 
     <!-- =====================================================================
-         ONBOARDING & AUTH FLOW (PERSISTENT SESSION + GOOGLE + OPTIONAL OTP)
+         ONBOARDING & AUTH FLOW
          ===================================================================== -->
     <div id="auth-container" class="flex-1 app-scroll flex flex-col justify-between px-6 pt-8 pb-8 z-20 bg-black text-white">
       
@@ -197,7 +195,7 @@
         </div>
       </div>
 
-      <!-- Screen 2: Mobile Number & OTP Verification (With Instant Skip Option) -->
+      <!-- Screen 2: Mobile Number & OTP Verification -->
       <div id="auth-step-otp" class="hidden flex-1 flex-col justify-between animate-fade-in">
         <div class="pt-2">
           <div class="flex items-center justify-between mb-6">
@@ -221,7 +219,6 @@
             Optional: verify via SMS OTP or tap "Skip for now" to enter Fintly immediately.
           </p>
 
-          <!-- Step 2A: Phone Input -->
           <div id="phone-input-section" class="mt-7 space-y-4">
             <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Mobile Number</label>
             <div class="flex items-center bg-[#121212] border border-[#262629] focus-within:border-[#3E82F7] rounded-[22px] px-4 py-3.5 transition-colors">
@@ -233,7 +230,6 @@
             </button>
           </div>
 
-          <!-- Step 2B: 6-Digit SMS OTP Verification -->
           <div id="otp-verify-section" class="hidden mt-7 space-y-5 animate-fade-in">
             <div class="flex items-center justify-between">
               <label class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Enter 6-Digit SMS OTP</label>
@@ -267,7 +263,7 @@
     </div>
 
     <!-- =====================================================================
-         MAIN APP SHELL (SINGLE INTEGRATED SCROLL PER TAB + SAFE BOTTOM DOCK)
+         MAIN APP SHELL
          ===================================================================== -->
     <div id="main-app" class="hidden flex-1 flex flex-col min-h-0 overflow-hidden bg-zinc-100 dark:bg-black text-zinc-900 dark:text-white transition-colors duration-300">
 
@@ -291,7 +287,7 @@
           </button>
         </div>
 
-        <!-- [ BOX 1 ] Account Balance, Total Received & Total Spent -->
+        <!-- [ BOX 1 ] Account Balance, Total Income & Total Expense -->
         <div class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] p-5 shadow-sm">
           <div class="flex items-center justify-between">
             <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Account Balance</span>
@@ -307,7 +303,7 @@
             <div class="rounded-[20px] bg-emerald-500/10 dark:bg-emerald-500/12 border border-emerald-500/20 p-3.5">
               <div class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
-                <span>Received</span>
+                <span>Income</span>
               </div>
               <p id="home-total-received" class="font-display text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-1">+₹0</p>
             </div>
@@ -315,7 +311,7 @@
             <div class="rounded-[20px] bg-rose-500/10 dark:bg-rose-500/12 border border-rose-500/20 p-3.5">
               <div class="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 text-xs font-semibold">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
-                <span>Spent</span>
+                <span>Expense</span>
               </div>
               <p id="home-total-spent" class="font-display text-lg font-bold text-rose-600 dark:text-rose-400 mt-1">-₹0</p>
             </div>
@@ -388,7 +384,7 @@
 
       </div>
 
-      <!-- TAB 2: HISTORY (SINGLE INTEGRATED SCROLL) -->
+      <!-- TAB 2: HISTORY -->
       <div id="tab-history" class="tab-view hidden flex-1 min-h-0 app-scroll px-4 pt-4 pb-32 space-y-4">
         
         <div class="px-2 pt-1 pb-1 flex items-end justify-between">
@@ -420,8 +416,8 @@
         <!-- Filter Pills -->
         <div class="flex items-center gap-2 overflow-x-auto no-scrollbar px-1">
           <button onclick="setHistoryFilter('all')" data-filter="all" class="hist-filter-btn px-4 py-1.5 rounded-full text-xs font-bold bg-zinc-900 text-white dark:bg-white dark:text-black transition-colors">All</button>
-          <button onclick="setHistoryFilter('expense')" data-filter="expense" class="hist-filter-btn px-4 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-[#1C1C1E] text-zinc-600 dark:text-zinc-400 transition-colors">Spent</button>
-          <button onclick="setHistoryFilter('income')" data-filter="income" class="hist-filter-btn px-4 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-[#1C1C1E] text-zinc-600 dark:text-zinc-400 transition-colors">Received</button>
+          <button onclick="setHistoryFilter('expense')" data-filter="expense" class="hist-filter-btn px-4 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-[#1C1C1E] text-zinc-600 dark:text-zinc-400 transition-colors">Expense</button>
+          <button onclick="setHistoryFilter('income')" data-filter="income" class="hist-filter-btn px-4 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-[#1C1C1E] text-zinc-600 dark:text-zinc-400 transition-colors">Income</button>
           <button onclick="setHistoryFilter('owe')" data-filter="owe" class="hist-filter-btn px-4 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-[#1C1C1E] text-zinc-600 dark:text-zinc-400 transition-colors">Split / Owe</button>
         </div>
 
@@ -430,7 +426,7 @@
 
       </div>
 
-      <!-- TAB 3: ADD OPTION (SINGLE INTEGRATED SCROLL + CUSTOM SQUIRCLE DROPDOWNS) -->
+      <!-- TAB 3: ADD OPTION -->
       <div id="tab-add" class="tab-view hidden flex-1 min-h-0 app-scroll px-4 pt-4 pb-32 space-y-4">
         
         <div class="px-2 pt-1 pb-1">
@@ -440,7 +436,7 @@
 
         <div id="add-type-bar" class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] p-1.5 grid grid-cols-4 gap-1">
           <button type="button" onclick="selectAddType('expense')" id="add-type-expense" class="py-2.5 px-1 rounded-[18px] text-[11px] font-bold bg-[#3E82F7] text-white transition-all">Expense</button>
-          <button type="button" onclick="selectAddType('income')" id="add-type-income" class="py-2.5 px-1 rounded-[18px] text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 transition-all">Received</button>
+          <button type="button" onclick="selectAddType('income')" id="add-type-income" class="py-2.5 px-1 rounded-[18px] text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 transition-all">Income</button>
           <button type="button" onclick="selectAddType('owe')" id="add-type-owe" class="py-2.5 px-1 rounded-[18px] text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 transition-all">Paid For Me</button>
           <button type="button" onclick="selectAddType('split')" id="add-type-split" class="py-2.5 px-1 rounded-[18px] text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 transition-all">Group Split</button>
         </div>
@@ -470,10 +466,10 @@
           <!-- Custom Squircle Category & Payment Mode Pickers -->
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">Category</label>
+              <label id="add-category-label" class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">Expense Category</label>
               <input type="hidden" id="add-category-value" value="" />
               <button type="button" onclick="openCustomCategoryPicker('add')" id="add-category-trigger" class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-3.5 py-3.5 text-xs font-bold flex items-center justify-between gap-1.5 text-left active:scale-[0.98] transition-transform">
-                <span id="add-category-display" class="truncate">🍔 Food & Dining</span>
+                <span id="add-category-display" class="truncate">🍔 Food & Beverages</span>
                 <svg class="w-4 h-4 text-zinc-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
               </button>
             </div>
@@ -507,7 +503,7 @@
 
       </div>
 
-      <!-- TAB 4: SETTINGS (SINGLE INTEGRATED SCROLL) -->
+      <!-- TAB 4: SETTINGS -->
       <div id="tab-settings" class="tab-view hidden flex-1 min-h-0 app-scroll px-4 pt-4 pb-32 space-y-4">
         
         <div class="px-2 pt-1 pb-1">
@@ -564,10 +560,10 @@
               </span>
               <div>
                 <p class="text-sm font-semibold">Manage Categories</p>
-                <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Add or delete spending categories</p>
+                <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Expense & Income category lists</p>
               </div>
             </div>
-            <span id="settings-cat-count" class="text-xs font-semibold text-zinc-400">6 active</span>
+            <span id="settings-cat-count" class="text-xs font-semibold text-zinc-400">11 active</span>
           </button>
         </div>
 
@@ -645,7 +641,7 @@
       </div>
 
       <!-- ===================================================================
-           BOTTOM FLOATING PILL NAVIGATION BAR (SAFE-AREA PINNED, NEVER CUT OFF)
+           BOTTOM FLOATING PILL NAVIGATION BAR
            =================================================================== -->
       <div class="absolute left-4 right-4 z-30" style="bottom: calc(env(safe-area-inset-bottom) + 16px);">
         <nav class="oneui-dock bg-white/95 dark:bg-[#18181B]/95 border border-zinc-200/80 dark:border-[#2C2C30] rounded-full p-1.5 grid grid-cols-4 gap-1">
@@ -684,7 +680,7 @@
     </div>
 
     <!-- =====================================================================
-         SECONDARY PICKER SHEET (FOR CUSTOM DROPDOWNS OVER MODALS)
+         SECONDARY PICKER SHEET (CUSTOM DROPDOWNS)
          ===================================================================== -->
     <div id="picker-backdrop" onclick="closePickerSheet()" class="hidden absolute inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-end justify-center">
       <div id="picker-sheet" onclick="event.stopPropagation()" class="w-full max-h-[75%] bg-white dark:bg-[#161619] border-t border-zinc-200 dark:border-[#2C2C32] rounded-t-[32px] p-5 app-scroll animate-slide-up text-zinc-900 dark:text-white" style="padding-bottom: calc(env(safe-area-inset-bottom) + 28px);">
@@ -735,7 +731,7 @@
         };
 
     const GOOGLE_WEB_CLIENT_ID = "770749227500-bcuelbshtnapo4ndmm7tnnhmvbpjuqhm.apps.googleusercontent.com";
-    const LOCAL_CACHE_KEY = "fintly_persistent_state_v2";
+    const LOCAL_CACHE_KEY = "fintly_persistent_state_v3";
 
     let app = null;
     let auth = null;
@@ -746,6 +742,7 @@
     let recaptchaVerifier = null;
     let activeTabName = 'home';
     let lastBackPressTime = 0;
+    let manageCategoryTab = 'expense';
 
     const isFirebaseConfigured = firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_FIREBASE_API_KEY";
 
@@ -761,7 +758,7 @@
     }
 
     // -----------------------------------------------------------------------
-    // CAPACITOR ANDROID NATIVE BRIDGES (BACK BUTTON, CONTACTS, UPI)
+    // CAPACITOR ANDROID NATIVE BRIDGES
     // -----------------------------------------------------------------------
     const CapacitorBridge = {
       isNativeAndroid() {
@@ -837,15 +834,16 @@
           window.Capacitor.Plugins.FintlyUpiListener.addListener('upiPaymentDetected', (payload) => {
             if (!payload || !payload.amount) return;
             const todayStr = new Date().toISOString().split('T')[0];
+            const txnType = payload.type === 'income' ? 'income' : 'expense';
             state.transactions.unshift({
               id: 't_upi_' + Date.now(),
-              title: payload.merchant || 'UPI Payment',
+              title: payload.merchant || (txnType === 'income' ? 'UPI Income' : 'UPI Payment'),
               amount: Number(payload.amount),
-              myShare: payload.type === 'income' ? 0 : Number(payload.amount),
+              myShare: txnType === 'income' ? 0 : Number(payload.amount),
               isSplit: false,
               splits: [],
-              type: payload.type === 'income' ? 'income' : 'expense',
-              category: autoGuessCategory(payload.merchant || ''),
+              type: txnType,
+              category: autoGuessCategory(payload.merchant || '', txnType),
               upiApp: payload.upiApp || 'UPI',
               dayOfWeek: getDayShort(todayStr),
               date: todayStr,
@@ -920,14 +918,24 @@
       }
     };
 
-    function autoGuessCategory(merchant) {
-      if (!state.categories.length) return 'uncategorized';
+    function autoGuessCategory(merchant, txnType = 'expense') {
+      const pool = state.categories.filter(c => (c.type || 'expense') === txnType);
+      if (!pool.length) return 'uncategorized';
       const m = merchant.toLowerCase();
-      const findCat = (keyword) => state.categories.find(c => c.id.includes(keyword) || c.name.toLowerCase().includes(keyword))?.id;
-      if (m.includes('swiggy') || m.includes('zomato') || m.includes('cafe') || m.includes('restaurant')) return findCat('food') || state.categories[0].id;
-      if (m.includes('uber') || m.includes('ola') || m.includes('rapido') || m.includes('metro')) return findCat('transport') || state.categories[0].id;
-      if (m.includes('amazon') || m.includes('flipkart') || m.includes('myntra')) return findCat('shop') || state.categories[0].id;
-      return state.categories[0].id;
+      const findCat = (keyword) => pool.find(c => c.id.includes(keyword) || c.name.toLowerCase().includes(keyword))?.id;
+
+      if (txnType === 'income') {
+        if (m.includes('salary') || m.includes('payroll') || m.includes('stipend')) return findCat('salary') || pool[0].id;
+        if (m.includes('pocket') || m.includes('mom') || m.includes('dad')) return findCat('pocket') || pool[0].id;
+        if (m.includes('refund') || m.includes('cashback')) return findCat('refund') || pool[0].id;
+        return pool[0].id;
+      }
+
+      if (m.includes('swiggy') || m.includes('zomato') || m.includes('cafe') || m.includes('coffee') || m.includes('restaurant')) return findCat('food') || pool[0].id;
+      if (m.includes('uber') || m.includes('ola') || m.includes('rapido') || m.includes('metro')) return findCat('transport') || pool[0].id;
+      if (m.includes('irctc') || m.includes('flight') || m.includes('makemytrip') || m.includes('hotel')) return findCat('travel') || pool[0].id;
+      if (m.includes('bill') || m.includes('electricity') || m.includes('recharge') || m.includes('wifi')) return findCat('bills') || pool[0].id;
+      return pool[0].id;
     }
 
     // -----------------------------------------------------------------------
@@ -946,12 +954,19 @@
       lastWeekTotal: 0,
       contacts: [],
       categories: [
-        { id: 'food', name: 'Food & Dining', icon: '🍔', color: '#F59E0B', budget: 0 },
-        { id: 'transport', name: 'Transport', icon: '🚕', color: '#3E82F7', budget: 0 },
-        { id: 'shopping', name: 'Shopping', icon: '🛍️', color: '#EC4899', budget: 0 },
-        { id: 'bills', name: 'Bills & UPI', icon: '⚡', color: '#8B5CF6', budget: 0 },
-        { id: 'entertainment', name: 'Entertainment', icon: '🎬', color: '#10B981', budget: 0 },
-        { id: 'health', name: 'Health', icon: '💊', color: '#F43F5E', budget: 0 }
+        // Expense Categories
+        { id: 'food_bev', name: 'Food & Beverages', icon: '🍔', color: '#F59E0B', budget: 0, type: 'expense' },
+        { id: 'transport', name: 'Transportation', icon: '🚕', color: '#3E82F7', budget: 0, type: 'expense' },
+        { id: 'travel', name: 'Travel', icon: '✈️', color: '#06B6D4', budget: 0, type: 'expense' },
+        { id: 'bills', name: 'Bills', icon: '⚡', color: '#8B5CF6', budget: 0, type: 'expense' },
+        { id: 'shopping', name: 'Shopping', icon: '🛍️', color: '#EC4899', budget: 0, type: 'expense' },
+        { id: 'health', name: 'Health', icon: '💊', color: '#F43F5E', budget: 0, type: 'expense' },
+        // Income Categories
+        { id: 'inc_salary', name: 'Salary', icon: '💼', color: '#22C55E', budget: 0, type: 'income' },
+        { id: 'inc_pocket', name: 'Pocket Money', icon: '👛', color: '#10B981', budget: 0, type: 'income' },
+        { id: 'inc_freelance', name: 'Freelance & Bonus', icon: '💻', color: '#3E82F7', budget: 0, type: 'income' },
+        { id: 'inc_refund', name: 'Refund & Cashback', icon: '🎁', color: '#A855F7', budget: 0, type: 'income' },
+        { id: 'inc_other', name: 'Other Income', icon: '💰', color: '#F59E0B', budget: 0, type: 'income' }
       ],
       budgetMode: 'total',
       totalMonthlyBudget: 25000,
@@ -966,7 +981,13 @@
         const raw = localStorage.getItem(LOCAL_CACHE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
-          return { ...defaultState(), ...parsed };
+          const merged = { ...defaultState(), ...parsed };
+          // Ensure backward compatibility for any legacy category without a type field
+          merged.categories = (merged.categories || []).map(c => ({
+            ...c,
+            type: c.type || (c.id.startsWith('inc_') ? 'income' : 'expense')
+          }));
+          return merged;
         }
       } catch (_) {}
       return defaultState();
@@ -1032,6 +1053,10 @@
               historyFilter: state.historyFilter,
               addFormType: state.addFormType
             };
+            state.categories = (state.categories || []).map(c => ({
+              ...c,
+              type: c.type || (c.id.startsWith('inc_') ? 'income' : 'expense')
+            }));
             saveLocalCache();
             applyThemeClass();
             renderAll();
@@ -1086,9 +1111,7 @@
             return;
           }
 
-          const result = await fbPlugin.signInWithGoogle({
-            serverClientId: GOOGLE_WEB_CLIENT_ID
-          });
+          const result = await fbPlugin.signInWithGoogle();
 
           if (result?.credential?.idToken) {
             const credential = GoogleAuthProvider.credential(result.credential.idToken);
@@ -1325,9 +1348,17 @@
       return sign + '₹' + Math.abs(Math.round(num)).toLocaleString('en-IN');
     };
 
+    function getExpenseCategories() {
+      return state.categories.filter(c => (c.type || 'expense') === 'expense');
+    }
+
+    function getIncomeCategories() {
+      return state.categories.filter(c => c.type === 'income');
+    }
+
     function getEffectiveMonthlyBudget() {
       if (state.budgetMode === 'category') {
-        return state.categories.reduce((sum, c) => sum + (Number(c.budget) || 0), 0);
+        return getExpenseCategories().reduce((sum, c) => sum + (Number(c.budget) || 0), 0);
       }
       return Number(state.totalMonthlyBudget) || 0;
     }
@@ -1356,7 +1387,6 @@
 
       if (tabName === 'add') {
         document.getElementById('add-date').valueAsDate = new Date();
-        syncAddCategoryDisplay();
         selectAddType(state.addFormType || 'expense');
       }
     };
@@ -1448,31 +1478,44 @@
     }
 
     // -----------------------------------------------------------------------
-    // CUSTOM SQUIRCLE PICKERS
+    // CUSTOM SQUIRCLE PICKERS (SEPARATE INCOME VS EXPENSE CATEGORIES)
     // -----------------------------------------------------------------------
+    function getActiveAddCategoryType() {
+      return state.addFormType === 'income' ? 'income' : 'expense';
+    }
+
     function syncAddCategoryDisplay() {
       const valInput = document.getElementById('add-category-value');
       const disp = document.getElementById('add-category-display');
+      const label = document.getElementById('add-category-label');
       if (!valInput || !disp) return;
 
-      if (!state.categories.length) {
+      const catType = getActiveAddCategoryType();
+      if (label) {
+        label.textContent = catType === 'income' ? 'Income Source' : 'Expense Category';
+      }
+
+      const pool = catType === 'income' ? getIncomeCategories() : getExpenseCategories();
+      if (!pool.length) {
         valInput.value = 'general';
-        disp.textContent = '✨ General';
+        disp.textContent = catType === 'income' ? '💰 General Income' : '✨ General Expense';
         return;
       }
 
-      let selected = state.categories.find(c => c.id === valInput.value) || state.categories[0];
+      let selected = pool.find(c => c.id === valInput.value) || pool[0];
       valInput.value = selected.id;
       disp.textContent = `${selected.icon} ${selected.name}`;
     }
 
-    window.openCustomCategoryPicker = function (targetContext) {
+    window.openCustomCategoryPicker = function (targetContext, forcedCatType = null) {
+      const catType = forcedCatType || (targetContext === 'add' ? getActiveAddCategoryType() : 'expense');
+      const pool = catType === 'income' ? getIncomeCategories() : getExpenseCategories();
       const currentVal = targetContext === 'add'
         ? document.getElementById('add-category-value')?.value
         : document.getElementById('edit-txn-category-value')?.value;
 
-      const listHtml = state.categories.length
-        ? state.categories.map(c => {
+      const listHtml = pool.length
+        ? pool.map(c => {
             const isSelected = c.id === currentVal;
             return `
               <button type="button" onclick="selectCategoryFromPicker('${targetContext}', '${c.id}')"
@@ -1481,20 +1524,20 @@
                   <span class="w-9 h-9 rounded-xl flex items-center justify-center text-lg" style="background:${c.color}22">${c.icon}</span>
                   <div class="text-left">
                     <p class="text-xs font-bold">${c.name}</p>
-                    <p class="text-[10px] text-zinc-400">${c.budget > 0 ? `Limit: ${formatINR(c.budget)}` : 'No category cap'}</p>
+                    ${catType === 'expense' ? `<p class="text-[10px] text-zinc-400">${c.budget > 0 ? `Limit: ${formatINR(c.budget)}` : 'No category cap'}</p>` : `<p class="text-[10px] text-emerald-500">Income category</p>`}
                   </div>
                 </div>
                 ${isSelected ? '<span class="w-5 h-5 rounded-full bg-[#3E82F7] text-white text-[11px] font-bold flex items-center justify-center">✓</span>' : ''}
               </button>
             `;
           }).join('')
-        : `<p class="text-xs text-zinc-400 text-center py-4">No categories available. Create one below!</p>`;
+        : `<p class="text-xs text-zinc-400 text-center py-4">No ${catType} categories yet. Create one in Manage Categories!</p>`;
 
       openPickerSheet(`
         <div class="space-y-3">
           <div class="flex items-center justify-between">
-            <h3 class="font-display text-lg font-extrabold">Choose Category</h3>
-            <button type="button" onclick="closePickerSheet(); closeModal(); switchTab('settings'); openSettingsModal('categories');" class="text-xs font-bold text-[#3E82F7]">+ Manage</button>
+            <h3 class="font-display text-lg font-extrabold">${catType === 'income' ? 'Income Category' : 'Expense Category'}</h3>
+            <button type="button" onclick="closePickerSheet(); closeModal(); switchTab('settings'); manageCategoryTab='${catType}'; openSettingsModal('categories');" class="text-xs font-bold text-[#3E82F7]">+ Manage</button>
           </div>
           <div class="space-y-2">${listHtml}</div>
         </div>
@@ -1688,7 +1731,7 @@
         contactId: contactId || null,
         personName: name,
         type: isReceiving ? 'settle_in' : 'settle_out',
-        category: state.categories[0]?.id || 'bills',
+        category: (isReceiving ? getIncomeCategories()[0]?.id : getExpenseCategories()[0]?.id) || 'bills',
         upiApp: 'UPI Settle',
         dayOfWeek: getDayShort(new Date().toISOString().split('T')[0]),
         date: new Date().toISOString().split('T')[0],
@@ -1707,7 +1750,9 @@
     window.openAnalyticsModal = function () {
       const metrics = computeLedgerMetrics();
       const effectiveBudget = getEffectiveMonthlyBudget();
-      const catTotals = state.categories.map(cat => {
+      const expenseCats = getExpenseCategories();
+
+      const catTotals = expenseCats.map(cat => {
         const spent = state.transactions
           .filter(t => (t.type === 'expense' || t.type === 'owe') && t.category === cat.id)
           .reduce((sum, t) => sum + (t.type === 'expense' && t.isSplit ? (Number(t.myShare) || 0) : Number(t.amount) || 0), 0);
@@ -1756,7 +1801,7 @@
                 ${ringSegments}
               </svg>
               <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                <span class="text-[9px] text-zinc-400 uppercase font-bold">My Spend</span>
+                <span class="text-[9px] text-zinc-400 uppercase font-bold">Expense</span>
                 <span class="font-display text-xs font-extrabold">${formatINR(metrics.totalPersonalSpent)}</span>
               </div>
             </div>
@@ -1777,7 +1822,7 @@
           </div>
 
           <div class="space-y-2">
-            <h4 class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Category Breakdown</h4>
+            <h4 class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Expense Breakdown</h4>
             ${catTotals.map(c => {
               const hasLimit = Number(c.budget) > 0;
               const pct = hasLimit ? Math.min(100, Math.round((c.spent / c.budget) * 100)) : (metrics.totalPersonalSpent > 0 ? Math.round((c.spent / totalExp) * 100) : 0);
@@ -1839,8 +1884,9 @@
       }
 
       container.innerHTML = filtered.map(txn => {
-        const cat = state.categories.find(c => c.id === txn.category) || { icon: '💸', name: 'General', color: '#3E82F7' };
         const isIncome = txn.type === 'income' || txn.type === 'settle_in';
+        const fallbackIcon = isIncome ? '💰' : '💸';
+        const cat = state.categories.find(c => c.id === txn.category) || { icon: fallbackIcon, name: isIncome ? 'Income' : 'Expense', color: isIncome ? '#22C55E' : '#3E82F7' };
         const isOwe = txn.type === 'owe';
         const amountColor = isIncome ? 'text-emerald-500' : isOwe ? 'text-amber-500' : 'text-zinc-900 dark:text-white';
         const prefix = isIncome ? '+' : '-';
@@ -1870,7 +1916,7 @@
 
             <div class="text-right shrink-0">
               <p class="font-display font-extrabold text-[15px] ${amountColor}">${prefix}${formatINR(txn.amount)}</p>
-              <p class="text-[10px] font-semibold text-[#3E82F7] mt-0.5">Edit / Split</p>
+              <p class="text-[10px] font-semibold text-[#3E82F7] mt-0.5">Edit</p>
             </div>
           </div>
         `;
@@ -1883,6 +1929,11 @@
       const txn = state.transactions.find(t => t.id === txnId);
       if (!txn) return;
 
+      const isIncome = txn.type === 'income' || txn.type === 'settle_in';
+      const editCatType = isIncome ? 'income' : 'expense';
+      const pool = editCatType === 'income' ? getIncomeCategories() : getExpenseCategories();
+      const selectedCat = state.categories.find(c => c.id === txn.category) || pool[0] || { id: 'general', icon: isIncome ? '💰' : '✨', name: 'General' };
+
       activeSplitDraft = {
         isSplit: Boolean(txn.isSplit),
         splitMode: txn.splitMode || 'exact',
@@ -1890,33 +1941,32 @@
         participants: txn.isSplit && Array.isArray(txn.splits) ? txn.splits.map(s => ({ ...s })) : []
       };
 
-      const selectedCat = state.categories.find(c => c.id === txn.category) || state.categories[0] || { id: 'general', icon: '✨', name: 'General' };
       const canSplit = txn.type === 'expense';
 
       openModal(`
         <form onsubmit="saveEditedTransaction(event, '${txn.id}')" class="space-y-4">
           <div class="flex items-center justify-between">
             <div>
-              <span class="text-[11px] font-bold uppercase tracking-widest text-[#3E82F7]">Edit Transaction</span>
+              <span class="text-[11px] font-bold uppercase tracking-widest text-[#3E82F7]">Edit ${isIncome ? 'Income' : 'Expense'}</span>
               <h3 class="font-display text-xl font-extrabold">${txn.title}</h3>
             </div>
             <span class="px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-[#1C1C1E] text-xs font-bold">${txn.upiApp}</span>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">Title / Merchant</label>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">${isIncome ? 'Source / Sender' : 'Title / Merchant'}</label>
             <input id="edit-txn-title" type="text" value="${txn.title}" required class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-4 py-3 text-sm font-semibold focus:outline-none" />
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">Total Paid (₹)</label>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">Amount (₹)</label>
               <input id="edit-txn-amount" type="number" min="1" value="${txn.amount}" oninput="recalcSplitDraftUI()" required class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-4 py-3 text-sm font-bold focus:outline-none" />
             </div>
             <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">Category</label>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">${isIncome ? 'Income Category' : 'Expense Category'}</label>
               <input type="hidden" id="edit-txn-category-value" value="${selectedCat.id}" />
-              <button type="button" onclick="openCustomCategoryPicker('edit')" class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-3 py-3 text-xs font-bold flex items-center justify-between gap-1 text-left">
+              <button type="button" onclick="openCustomCategoryPicker('edit', '${editCatType}')" class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-3 py-3 text-xs font-bold flex items-center justify-between gap-1 text-left">
                 <span id="edit-txn-category-display" class="truncate">${selectedCat.icon} ${selectedCat.name}</span>
                 <svg class="w-4 h-4 text-zinc-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
               </button>
@@ -2168,7 +2218,7 @@
     };
 
     // -----------------------------------------------------------------------
-    // ADD TAB LOGIC
+    // ADD TAB LOGIC (SEPARATE INCOME VS EXPENSE CATEGORIES)
     // -----------------------------------------------------------------------
     window.selectAddType = function (type) {
       state.addFormType = type;
@@ -2176,7 +2226,7 @@
       const bar = document.getElementById('add-type-bar');
       bar.innerHTML = [
         { id: 'expense', label: 'Expense' },
-        { id: 'income', label: 'Received' },
+        { id: 'income', label: 'Income' },
         { id: 'owe', label: 'Paid For Me' },
         { id: 'split', label: 'Group Split' }
       ].map(item => `
@@ -2194,6 +2244,9 @@
       slot.innerHTML = '';
       pickContactBtn.classList.add('hidden');
       document.getElementById('add-amount').oninput = null;
+
+      // Refresh Category selector to match Expense vs Income
+      syncAddCategoryDisplay();
 
       if (type === 'owe') {
         titleLabel.textContent = 'Who Paid For You?';
@@ -2226,8 +2279,8 @@
         `;
         recalcSplitDraftUI();
       } else if (type === 'income') {
-        titleLabel.textContent = 'Sender / Source';
-        titleInput.placeholder = 'e.g., Salary, Refund, Client...';
+        titleLabel.textContent = 'Income Source / Sender';
+        titleInput.placeholder = 'e.g., Monthly Salary, Pocket Money, Refund...';
       } else {
         titleLabel.textContent = 'Merchant or Title';
         titleInput.placeholder = 'e.g., Coffee, Groceries, Cab...';
@@ -2239,7 +2292,8 @@
       const amount = Number(document.getElementById('add-amount').value);
       const titleInput = document.getElementById('add-title');
       const title = titleInput.value.trim();
-      const category = document.getElementById('add-category-value').value || state.categories[0]?.id || 'general';
+      const catPool = state.addFormType === 'income' ? getIncomeCategories() : getExpenseCategories();
+      const category = document.getElementById('add-category-value').value || catPool[0]?.id || 'general';
       const date = document.getElementById('add-date').value || new Date().toISOString().split('T')[0];
       const mode = document.getElementById('add-mode-value').value || 'UPI';
       const note = document.getElementById('add-note').value.trim();
@@ -2322,7 +2376,7 @@
     };
 
     // -----------------------------------------------------------------------
-    // SETTINGS, CUSTOM CATEGORIES, AUTO-SUMMING BUDGETS & SUBSCRIPTIONS
+    // SETTINGS, SEPARATE EXPENSE/INCOME CATEGORIES, BUDGETS & SUBSCRIPTIONS
     // -----------------------------------------------------------------------
     function renderSettingsSummary() {
       const metrics = computeLedgerMetrics();
@@ -2332,7 +2386,7 @@
       const phoneLabel = state.user.phone ? `+91 ${state.user.phone}` : (state.user.email || 'Cloud Active');
       document.getElementById('settings-profile-sub').textContent = `${phoneLabel} • ${state.contacts.length} contacts`;
       document.getElementById('settings-balance-preview').textContent = formatINR(metrics.bankBalance);
-      document.getElementById('settings-cat-count').textContent = `${state.categories.length} active`;
+      document.getElementById('settings-cat-count').textContent = `${getExpenseCategories().length} exp • ${getIncomeCategories().length} inc`;
 
       const effectiveBudget = getEffectiveMonthlyBudget();
       document.getElementById('settings-budget-sub').textContent = state.budgetMode === 'total'
@@ -2424,42 +2478,63 @@
       if (section === 'recurring') renderRecurringModal();
     };
 
+    window.setManageCategoryTab = function (type) {
+      manageCategoryTab = type;
+      renderCategoriesModal();
+    };
+
     window.renderCategoriesModal = function () {
+      const list = manageCategoryTab === 'income' ? getIncomeCategories() : getExpenseCategories();
       openModal(`
         <div class="space-y-4">
           <div class="flex items-center justify-between">
             <div>
               <h3 class="font-display text-2xl font-extrabold">Manage Categories</h3>
-              <p class="text-xs text-zinc-400">Delete defaults or build your own custom list</p>
+              <p class="text-xs text-zinc-400">Customize Expense & Income categories separately</p>
             </div>
-            ${state.categories.length ? `<button type="button" onclick="deleteAllCategories()" class="px-3 py-1.5 rounded-full bg-rose-500/15 text-rose-500 text-xs font-bold">Clear All</button>` : ''}
+            ${list.length ? `<button type="button" onclick="deleteAllCategoriesOfType('${manageCategoryTab}')" class="px-3 py-1.5 rounded-full bg-rose-500/15 text-rose-500 text-xs font-bold">Clear All</button>` : ''}
           </div>
 
-          <div class="space-y-2 max-h-[250px] app-scroll">
-            ${state.categories.length ? state.categories.map((c, idx) => `
+          <div class="p-1.5 rounded-full bg-zinc-100 dark:bg-[#1C1C1E] grid grid-cols-2 gap-1">
+            <button type="button" onclick="setManageCategoryTab('expense')" class="py-2 rounded-full text-xs font-bold ${manageCategoryTab === 'expense' ? 'bg-[#3E82F7] text-white' : 'text-zinc-400'}">
+              Expense (${getExpenseCategories().length})
+            </button>
+            <button type="button" onclick="setManageCategoryTab('income')" class="py-2 rounded-full text-xs font-bold ${manageCategoryTab === 'income' ? 'bg-emerald-500 text-zinc-950' : 'text-zinc-400'}">
+              Income (${getIncomeCategories().length})
+            </button>
+          </div>
+
+          <div class="space-y-2 max-h-[220px] app-scroll">
+            ${list.length ? list.map(c => `
               <div class="p-3.5 rounded-[18px] bg-zinc-100 dark:bg-[#1C1C1E] flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <span class="text-lg">${c.icon}</span>
                   <span class="text-xs font-bold">${c.name}</span>
                 </div>
-                <button type="button" onclick="deleteCategory(${idx})" class="w-7 h-7 rounded-full bg-rose-500/15 text-rose-500 text-xs font-bold flex items-center justify-center">✕</button>
+                <button type="button" onclick="deleteCategoryById('${c.id}')" class="w-7 h-7 rounded-full bg-rose-500/15 text-rose-500 text-xs font-bold flex items-center justify-center">✕</button>
               </div>
-            `).join('') : '<p class="text-xs text-zinc-400 text-center py-4">All categories cleared. Add your own below!</p>'}
+            `).join('') : `<p class="text-xs text-zinc-400 text-center py-4">No ${manageCategoryTab} categories. Add your own below!</p>`}
           </div>
 
           <form onsubmit="addNewCategory(event)" class="pt-3 border-t border-zinc-200 dark:border-[#262629] space-y-3">
-            <p class="text-xs font-bold uppercase tracking-wider text-[#3E82F7]">Create Custom Category</p>
+            <p class="text-xs font-bold uppercase tracking-wider ${manageCategoryTab === 'income' ? 'text-emerald-500' : 'text-[#3E82F7]'}">
+              Add New ${manageCategoryTab === 'income' ? 'Income' : 'Expense'} Category
+            </p>
             <div class="flex gap-2">
-              <input id="new-cat-icon" type="text" maxlength="2" value="✈️" class="w-14 text-center bg-zinc-100 dark:bg-[#1C1C1E] rounded-[16px] py-3 text-lg" />
-              <input id="new-cat-name" type="text" placeholder="e.g., Travel, Fuel, Gym..." required class="flex-1 bg-zinc-100 dark:bg-[#1C1C1E] rounded-[16px] px-4 py-3 text-sm font-semibold focus:outline-none" />
+              <input id="new-cat-icon" type="text" maxlength="2" value="${manageCategoryTab === 'income' ? '💵' : '🍔'}" class="w-14 text-center bg-zinc-100 dark:bg-[#1C1C1E] rounded-[16px] py-3 text-lg" />
+              <input id="new-cat-name" type="text" placeholder="${manageCategoryTab === 'income' ? 'e.g., Stipend, Dividends, Gift...' : 'e.g., Coffee, Fuel, Rent...'}" required class="flex-1 bg-zinc-100 dark:bg-[#1C1C1E] rounded-[16px] px-4 py-3 text-sm font-semibold focus:outline-none" />
             </div>
-            <button type="submit" class="w-full py-3.5 rounded-full bg-[#3E82F7] text-white font-bold text-sm">+ Add Category</button>
+            <button type="submit" class="w-full py-3.5 rounded-full ${manageCategoryTab === 'income' ? 'bg-emerald-500 text-zinc-950' : 'bg-[#3E82F7] text-white'} font-bold text-sm">
+              + Add ${manageCategoryTab === 'income' ? 'Income' : 'Expense'} Category
+            </button>
           </form>
         </div>
       `);
     };
 
-    window.deleteCategory = function (idx) {
+    window.deleteCategoryById = function (catId) {
+      const idx = state.categories.findIndex(c => c.id === catId);
+      if (idx === -1) return;
       const removed = state.categories.splice(idx, 1)[0];
       if (state.budgetMode === 'category') state.totalMonthlyBudget = getEffectiveMonthlyBudget();
       persistState();
@@ -2468,26 +2543,37 @@
       showToast('Category Removed', `${removed.name} deleted`, 'amber');
     };
 
-    window.deleteAllCategories = function () {
-      state.categories = [];
-      if (state.budgetMode === 'category') state.totalMonthlyBudget = 0;
+    window.deleteAllCategoriesOfType = function (catType) {
+      state.categories = state.categories.filter(c => (c.type || 'expense') !== catType);
+      if (catType === 'expense' && state.budgetMode === 'category') {
+        state.totalMonthlyBudget = 0;
+      }
       persistState();
       renderAll();
       renderCategoriesModal();
-      showToast('All Cleared', 'Create your own custom categories below', 'amber');
+      showToast('Cleared', `All ${catType} categories removed`, 'amber');
     };
 
     window.addNewCategory = function (e) {
       e.preventDefault();
-      const icon = document.getElementById('new-cat-icon').value.trim() || '✨';
+      const icon = document.getElementById('new-cat-icon').value.trim() || (manageCategoryTab === 'income' ? '💰' : '✨');
       const name = document.getElementById('new-cat-name').value.trim();
       if (!name) return;
-      const colors = ['#3E82F7', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6'];
-      state.categories.push({ id: 'cat_' + Date.now(), name, icon, color: colors[state.categories.length % colors.length], budget: 0 });
+      const colors = manageCategoryTab === 'income'
+        ? ['#22C55E', '#10B981', '#3E82F7', '#A855F7', '#F59E0B']
+        : ['#3E82F7', '#F59E0B', '#EC4899', '#8B5CF6', '#06B6D4'];
+      state.categories.push({
+        id: (manageCategoryTab === 'income' ? 'inc_' : 'cat_') + Date.now(),
+        name,
+        icon,
+        color: colors[state.categories.length % colors.length],
+        budget: 0,
+        type: manageCategoryTab
+      });
       persistState();
       renderAll();
       renderCategoriesModal();
-      showToast('Category Added', `${icon} ${name} created`, 'emerald');
+      showToast('Category Added', `${icon} ${name} added to ${manageCategoryTab}`, 'emerald');
     };
 
     window.savePersonalInfo = function (e) {
@@ -2504,6 +2590,7 @@
       const metrics = computeLedgerMetrics();
       const isTotal = state.budgetMode === 'total';
       const effectiveBudget = getEffectiveMonthlyBudget();
+      const expenseCats = getExpenseCategories();
 
       openModal(`
         <div class="space-y-4">
@@ -2523,20 +2610,20 @@
 
           ${isTotal ? `
             <div class="p-4 rounded-[22px] bg-zinc-100 dark:bg-[#1C1C1E] space-y-3">
-              <p class="text-xs text-zinc-400">Set one overall monthly cap without needing per-category limits.</p>
+              <p class="text-xs text-zinc-400">Set one overall monthly expense cap without needing per-category limits.</p>
               <div class="flex items-center bg-white dark:bg-[#121212] rounded-2xl px-4 py-3 border border-zinc-200 dark:border-[#262629]">
                 <span class="text-lg font-bold text-zinc-400 mr-2">₹</span>
                 <input type="number" step="500" value="${state.totalMonthlyBudget}" oninput="window.updateTotalBudgetValue(this.value)" class="w-full bg-transparent font-display text-2xl font-extrabold focus:outline-none" />
               </div>
               <div class="flex justify-between text-xs text-zinc-400">
-                <span>Spent: ${formatINR(metrics.totalPersonalSpent)}</span>
+                <span>Expense: ${formatINR(metrics.totalPersonalSpent)}</span>
                 <span>Left: ${formatINR(Math.max(0, state.totalMonthlyBudget - metrics.totalPersonalSpent))}</span>
               </div>
             </div>
           ` : `
             <div class="space-y-2.5 max-h-[260px] app-scroll">
-              <p class="text-xs text-zinc-400">Enter limits only for categories you want (leave blank for unbudgeted). Total adjusts automatically.</p>
-              ${state.categories.map((c, i) => `
+              <p class="text-xs text-zinc-400">Enter limits only for expense categories you want (leave blank for unbudgeted). Total adjusts automatically.</p>
+              ${expenseCats.map(c => `
                 <div class="p-3.5 rounded-[20px] bg-zinc-100 dark:bg-[#1C1C1E] flex items-center justify-between gap-3">
                   <div class="flex items-center gap-2.5 min-w-0">
                     <span>${c.icon}</span>
@@ -2545,7 +2632,7 @@
                   <div class="flex items-center gap-1 bg-white dark:bg-[#121212] px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-[#262629] shrink-0">
                     <span class="text-xs text-zinc-400">₹</span>
                     <input type="number" min="0" step="100" value="${c.budget || ''}" placeholder="Optional"
-                      oninput="window.updateCategoryBudgetValue(${i}, this.value)"
+                      oninput="window.updateCategoryBudgetById('${c.id}', this.value)"
                       class="w-16 bg-transparent text-xs font-bold text-right focus:outline-none" />
                   </div>
                 </div>
@@ -2567,8 +2654,9 @@
       if (badge) badge.textContent = `Total: ${formatINR(state.totalMonthlyBudget)}`;
     };
 
-    window.updateCategoryBudgetValue = function (idx, val) {
-      state.categories[idx].budget = Math.max(0, Number(val) || 0);
+    window.updateCategoryBudgetById = function (catId, val) {
+      const cat = state.categories.find(c => c.id === catId);
+      if (cat) cat.budget = Math.max(0, Number(val) || 0);
       state.totalMonthlyBudget = getEffectiveMonthlyBudget();
       renderSettingsSummary();
       const badge = document.querySelector('#modal-content span.text-\\[\\#3E82F7\\]');
@@ -2650,7 +2738,7 @@
       const name = document.getElementById('new-sub-name').value.trim();
       const amount = Number(document.getElementById('new-sub-amt').value) || 0;
       if (!name || !amount) return;
-      state.subscriptions.push({ id: 'sub_' + Date.now(), name, amount, cycle: 'Monthly', active: true, icon: '🔄', category: state.categories[0]?.id || 'bills' });
+      state.subscriptions.push({ id: 'sub_' + Date.now(), name, amount, cycle: 'Monthly', active: true, icon: '🔄', category: getExpenseCategories()[0]?.id || 'bills' });
       persistState();
       renderSettingsSummary();
       renderRecurringModal();
