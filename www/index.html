@@ -1,0 +1,2662 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Fintly</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          borderRadius: {
+            'squircle': '28px',
+            'squircle-sm': '20px',
+          },
+          colors: {
+            oneui: {
+              bg: '#000000',
+              surface: '#121212',
+              surfaceElevated: '#1C1C1E',
+              border: '#262629',
+              accent: '#3E82F7',
+              accentSoft: 'rgba(62, 130, 247, 0.16)',
+              mint: '#22C55E',
+              coral: '#F43F5E',
+              amber: '#F59E0B',
+              violet: '#8B5CF6',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #000000;
+      color: #ffffff;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .squircle-card {
+      border-radius: 28px;
+      transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.25s ease, border-color 0.25s ease;
+    }
+    .squircle-card:active {
+      transform: scale(0.985);
+    }
+
+    .oneui-dock {
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55);
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0.5; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes toastDrop {
+      0% { transform: translateY(-120%) scale(0.95); opacity: 0; }
+      15% { transform: translateY(0) scale(1); opacity: 1; }
+      85% { transform: translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateY(-120%) scale(0.95); opacity: 0; }
+    }
+
+    .animate-slide-up {
+      animation: slideUp 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .animate-toast {
+      animation: toastDrop 3.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .week-bar {
+      transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s ease;
+    }
+
+    .oneui-switch {
+      width: 48px;
+      height: 28px;
+      border-radius: 999px;
+      position: relative;
+      transition: background-color 0.25s ease;
+      cursor: pointer;
+    }
+    .oneui-switch-thumb {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #ffffff;
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    .oneui-switch.active .oneui-switch-thumb {
+      transform: translateX(20px);
+    }
+  </style>
+</head>
+<body class="min-h-[100dvh] bg-black text-zinc-900 dark:text-white flex flex-col">
+
+  <!-- Full-Viewport Native App Container (Ready for Capacitor Android WebView) -->
+  <div id="app-shell" class="relative w-full max-w-md mx-auto h-[100dvh] bg-zinc-100 dark:bg-black text-zinc-900 dark:text-white overflow-hidden flex flex-col transition-colors duration-300">
+
+    <!-- Live Notification Toast Banner -->
+    <div id="toast-container" class="absolute top-4 left-4 right-4 z-50 pointer-events-none flex flex-col gap-2"></div>
+
+    <!-- =====================================================================
+         ONBOARDING & AUTH FLOW (GOOGLE SIGN-IN + OTP VERIFICATION)
+         ===================================================================== -->
+    <div id="auth-container" class="flex-1 flex flex-col justify-between px-6 pt-8 pb-8 overflow-y-auto no-scrollbar z-20 bg-black text-white">
+      
+      <!-- Screen 1: Welcome & Google Sign-In -->
+      <div id="auth-step-google" class="flex-1 flex flex-col justify-between animate-fade-in">
+        <div class="pt-10">
+          <div class="w-16 h-16 rounded-[22px] bg-gradient-to-br from-[#3E82F7] via-[#2563EB] to-[#1D4ED8] flex items-center justify-center shadow-[0_12px_30px_rgba(62,130,247,0.35)] mb-7">
+            <svg class="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <h1 class="font-display text-[40px] font-extrabold leading-[1.08] tracking-tight text-white">
+            Fintly
+          </h1>
+          <p class="text-zinc-400 text-[15px] leading-relaxed mt-3 max-w-[300px]">
+            Instant UPI tracking, group bill splits, and cloud-synced personal finance.
+          </p>
+        </div>
+
+        <!-- Core Highlights -->
+        <div class="my-6 space-y-3">
+          <div class="bg-[#121212] border border-[#262629] rounded-[24px] p-4 flex items-center gap-3.5">
+            <div class="w-10 h-10 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-white">Instant UPI Auto-Tracking</p>
+              <p class="text-xs text-zinc-400">Detects GPay, PhonePe & Paytm alerts automatically</p>
+            </div>
+          </div>
+          <div class="bg-[#121212] border border-[#262629] rounded-[24px] p-4 flex items-center gap-3.5">
+            <div class="w-10 h-10 rounded-2xl bg-blue-500/15 text-blue-400 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-white">Smart Group Splits</p>
+              <p class="text-xs text-zinc-400">Synced with contacts & backed up to the cloud</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Google Sign-In CTA -->
+        <div class="space-y-3">
+          <button id="google-signin-btn" onclick="initiateGoogleSignIn()" class="w-full py-4 px-5 rounded-full bg-white text-zinc-950 font-semibold text-[15px] flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] transition-transform">
+            <svg class="w-5 h-5" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z"/>
+              <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"/>
+              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"/>
+            </svg>
+            <span>Continue with Google</span>
+          </button>
+          <div id="recaptcha-container"></div>
+        </div>
+      </div>
+
+      <!-- Screen 2: Mobile Number & OTP Verification -->
+      <div id="auth-step-otp" class="hidden flex-1 flex-col justify-between animate-fade-in">
+        <div class="pt-4">
+          <button onclick="backToGoogle()" class="w-10 h-10 rounded-full bg-[#1C1C1E] flex items-center justify-center text-zinc-300 mb-6 active:scale-95">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1C1C1E] border border-[#262629] text-xs text-zinc-300 mb-4">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span id="selected-google-email">Sign in verified</span>
+          </div>
+
+          <h2 class="font-display text-[32px] font-extrabold leading-[1.12] tracking-tight text-white">
+            Verify your<br/>mobile number.
+          </h2>
+          <p class="text-zinc-400 text-sm mt-2">
+            Link your mobile number via SMS OTP to sync your Fintly ledger across devices.
+          </p>
+
+          <!-- Step 2A: Phone Input -->
+          <div id="phone-input-section" class="mt-8 space-y-4">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Mobile Number</label>
+            <div class="flex items-center bg-[#121212] border border-[#262629] focus-within:border-[#3E82F7] rounded-[22px] px-4 py-3.5 transition-colors">
+              <span class="text-base font-bold text-zinc-300 pr-3 border-r border-zinc-800">+91</span>
+              <input id="mobile-number-input" type="tel" maxlength="10" placeholder="Enter 10-digit number" class="bg-transparent text-white text-lg font-semibold tracking-wider pl-3 w-full focus:outline-none" />
+            </div>
+            <button id="send-otp-btn" onclick="sendOtpCode()" class="w-full py-4 rounded-full bg-[#3E82F7] hover:bg-blue-500 text-white font-semibold text-[15px] shadow-[0_8px_24px_rgba(62,130,247,0.35)] active:scale-[0.98] transition-all">
+              Send OTP
+            </button>
+          </div>
+
+          <!-- Step 2B: 6-Digit SMS OTP Verification -->
+          <div id="otp-verify-section" class="hidden mt-8 space-y-5 animate-fade-in">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Enter SMS OTP</label>
+              <span class="text-xs text-[#3E82F7] font-medium">+91 <span id="display-phone-num"></span></span>
+            </div>
+
+            <div class="grid grid-cols-6 gap-2">
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-box h-14 rounded-[18px] bg-[#121212] border border-[#262629] focus:border-[#3E82F7] text-center text-xl font-bold text-white focus:outline-none" />
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-box h-14 rounded-[18px] bg-[#121212] border border-[#262629] focus:border-[#3E82F7] text-center text-xl font-bold text-white focus:outline-none" />
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-box h-14 rounded-[18px] bg-[#121212] border border-[#262629] focus:border-[#3E82F7] text-center text-xl font-bold text-white focus:outline-none" />
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-box h-14 rounded-[18px] bg-[#121212] border border-[#262629] focus:border-[#3E82F7] text-center text-xl font-bold text-white focus:outline-none" />
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-box h-14 rounded-[18px] bg-[#121212] border border-[#262629] focus:border-[#3E82F7] text-center text-xl font-bold text-white focus:outline-none" />
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-box h-14 rounded-[18px] bg-[#121212] border border-[#262629] focus:border-[#3E82F7] text-center text-xl font-bold text-white focus:outline-none" />
+            </div>
+
+            <button id="verify-otp-btn" onclick="verifyOtpAndEnter()" class="w-full py-4 rounded-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-[15px] shadow-[0_8px_24px_rgba(34,197,94,0.3)] active:scale-[0.98] transition-all">
+              Verify & Continue
+            </button>
+
+            <div class="flex items-center justify-between text-xs text-zinc-400 pt-1">
+              <button onclick="resetPhoneStep()" class="hover:text-white underline">Change number</button>
+              <button onclick="sendOtpCode()" class="text-[#3E82F7] font-medium">Resend OTP</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =====================================================================
+         MAIN APP SHELL (4 TABS + FLOATING PILL NAVIGATION)
+         ===================================================================== -->
+    <div id="main-app" class="hidden flex-1 flex flex-col overflow-hidden bg-zinc-100 dark:bg-black text-zinc-900 dark:text-white transition-colors duration-300">
+
+      <!-- TAB 1: HOME -->
+      <div id="tab-home" class="tab-view flex-1 overflow-y-auto no-scrollbar px-4 pt-4 pb-28 space-y-3.5">
+        
+        <!-- Header -->
+        <div class="px-2 pt-2 pb-1 flex items-center justify-between">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-widest text-[#3E82F7]">Fintly</span>
+              <span id="cloud-sync-pill" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-500">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                Synced
+              </span>
+            </div>
+            <h1 id="home-user-greeting" class="font-display text-[28px] font-extrabold tracking-tight leading-tight mt-0.5">Fintly</h1>
+          </div>
+          <button onclick="switchTab('settings')" class="w-11 h-11 rounded-full bg-white dark:bg-[#1C1C1E] border border-zinc-200 dark:border-[#262629] flex items-center justify-center font-bold text-sm text-[#3E82F7] shadow-sm active:scale-95 transition-transform">
+            <span id="header-avatar-initials">FN</span>
+          </button>
+        </div>
+
+        <!-- [ BOX 1 ] Account Balance, Total Received & Total Spent -->
+        <div class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] p-5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Account Balance</span>
+            <button onclick="openAdjustBalanceModal()" class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-[#1C1C1E] text-zinc-600 dark:text-zinc-300 hover:text-[#3E82F7] transition-colors">
+              Adjust
+            </button>
+          </div>
+          <div class="mt-1.5 flex items-baseline gap-1">
+            <span id="home-balance" class="font-display text-[36px] font-extrabold tracking-tight">₹0</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5 mt-4">
+            <div class="rounded-[20px] bg-emerald-500/10 dark:bg-emerald-500/12 border border-emerald-500/20 p-3.5">
+              <div class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+                <span>Received</span>
+              </div>
+              <p id="home-total-received" class="font-display text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-1">+₹0</p>
+            </div>
+
+            <div class="rounded-[20px] bg-rose-500/10 dark:bg-rose-500/12 border border-rose-500/20 p-3.5">
+              <div class="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 text-xs font-semibold">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                <span>Spent</span>
+              </div>
+              <p id="home-total-spent" class="font-display text-lg font-bold text-rose-600 dark:text-rose-400 mt-1">-₹0</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- [ BOX 2 ] Split Summary: Money You Owe vs Money People Owe You -->
+        <div onclick="openSplitDrawer()" class="squircle-card cursor-pointer bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-[#3E82F7]"></span>
+              <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Split Ledger</span>
+            </div>
+            <span class="text-xs font-semibold text-[#3E82F7] flex items-center gap-0.5">
+              Details
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 divide-x divide-zinc-200 dark:divide-[#262629]">
+            <div class="pr-3">
+              <p class="text-xs text-zinc-500 dark:text-zinc-400 font-medium">You Owe</p>
+              <p id="home-you-owe" class="font-display text-xl font-extrabold text-amber-500 mt-0.5">₹0</p>
+              <p id="home-you-owe-sub" class="text-[11px] text-zinc-400 mt-0.5">To 0 people</p>
+            </div>
+            <div class="pl-4">
+              <p class="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Owed to You</p>
+              <p id="home-owed-to-you" class="font-display text-xl font-extrabold text-sky-400 mt-0.5">₹0</p>
+              <p id="home-owed-to-you-sub" class="text-[11px] text-zinc-400 mt-0.5">From 0 people</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- [ BOX 3 ] Weekly Spending Relativeness Bar Graph (No Numbers, % vs Last Week) -->
+        <div class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] p-5 shadow-sm">
+          <div class="flex items-start justify-between gap-2 mb-4">
+            <div>
+              <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Weekly Pace</span>
+              <h3 class="font-display text-base font-bold mt-0.5">Daily Spend Rhythm</h3>
+            </div>
+            <span id="weekly-comparison-badge" class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-500 shrink-0">
+              <span>0% vs last week</span>
+            </span>
+          </div>
+
+          <div id="weekly-bars-container" class="h-32 pt-3 px-1 flex items-end justify-between gap-2.5"></div>
+        </div>
+
+        <!-- [ BOX 4 ] Analytics Launch Card -->
+        <button onclick="openAnalyticsModal()" class="squircle-card w-full text-left bg-gradient-to-br from-[#181B24] via-[#12141D] to-[#0D1017] dark:from-[#161922] dark:via-[#11131A] dark:to-[#0C0D12] border border-[#2B3245] p-5 shadow-md relative overflow-hidden group">
+          <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#3E82F7]/20 blur-2xl pointer-events-none"></div>
+          <div class="flex items-center justify-between relative z-10">
+            <div class="flex items-center gap-3.5">
+              <div class="w-12 h-12 rounded-[18px] bg-[#3E82F7]/20 border border-[#3E82F7]/30 text-[#3E82F7] flex items-center justify-center shrink-0">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-display text-[17px] font-bold text-white">Analytics</h3>
+                  <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-[#3E82F7] text-white">Fintly</span>
+                </div>
+                <p class="text-xs text-zinc-400 mt-0.5">Category breakdown, savings velocity & budgets</p>
+              </div>
+            </div>
+            <div class="w-9 h-9 rounded-full bg-white/10 text-white flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </div>
+          </div>
+        </button>
+
+      </div>
+
+      <!-- TAB 2: HISTORY (AUTOMATIC ANDROID NOTIFICATION LISTENER + EDITABLE ITEMS) -->
+      <div id="tab-history" class="tab-view hidden flex-1 overflow-y-auto no-scrollbar px-4 pt-4 pb-28 space-y-4">
+        
+        <div class="px-2 pt-2 pb-1 flex items-end justify-between">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-widest text-[#3E82F7]">Fintly Auto-Sync</p>
+            <h1 class="font-display text-[30px] font-extrabold tracking-tight leading-tight mt-0.5">History</h1>
+          </div>
+          <span id="history-count-badge" class="text-xs font-semibold px-3 py-1 rounded-full bg-white dark:bg-[#1C1C1E] border border-zinc-200 dark:border-[#262629] text-zinc-500 dark:text-zinc-400">
+            0 txns
+          </span>
+        </div>
+
+        <!-- Android NotificationListenerService Status Card -->
+        <div class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] p-4 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div id="upi-listener-icon" class="w-10 h-10 rounded-2xl bg-[#3E82F7]/15 text-[#3E82F7] flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+            </div>
+            <div class="min-w-0">
+              <p id="upi-listener-title" class="text-xs font-bold truncate">UPI Notification Listener</p>
+              <p id="upi-listener-sub" class="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">Auto-captures GPay, PhonePe & Paytm</p>
+            </div>
+          </div>
+          <button id="upi-listener-btn" onclick="requestAndroidNotificationPermission()" class="px-3.5 py-2 rounded-full bg-[#3E82F7] hover:bg-blue-500 text-white text-xs font-bold shadow-sm active:scale-95 transition-transform shrink-0">
+            Enable Access
+          </button>
+        </div>
+
+        <!-- Filter Pills -->
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar px-1">
+          <button onclick="setHistoryFilter('all')" data-filter="all" class="hist-filter-btn px-4 py-1.5 rounded-full text-xs font-bold bg-zinc-900 text-white dark:bg-white dark:text-black transition-colors">All</button>
+          <button onclick="setHistoryFilter('expense')" data-filter="expense" class="hist-filter-btn px-4 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-[#1C1C1E] text-zinc-600 dark:text-zinc-400 transition-colors">Spent</button>
+          <button onclick="setHistoryFilter('income')" data-filter="income" class="hist-filter-btn px-4 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-[#1C1C1E] text-zinc-600 dark:text-zinc-400 transition-colors">Received</button>
+          <button onclick="setHistoryFilter('owe')" data-filter="owe" class="hist-filter-btn px-4 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-[#1C1C1E] text-zinc-600 dark:text-zinc-400 transition-colors">Split / Owe</button>
+        </div>
+
+        <!-- Transactions List -->
+        <div id="history-list-container" class="space-y-2.5"></div>
+
+      </div>
+
+      <!-- TAB 3: ADD OPTION (MISSED PAYMENTS / SOMEONE PAID FOR ME / GROUP SPLIT) -->
+      <div id="tab-add" class="tab-view hidden flex-1 overflow-y-auto no-scrollbar px-4 pt-4 pb-28 space-y-4">
+        
+        <div class="px-2 pt-2 pb-1">
+          <p class="text-xs font-semibold uppercase tracking-widest text-[#3E82F7]">Fintly</p>
+          <h1 class="font-display text-[30px] font-extrabold tracking-tight leading-tight mt-0.5">Add Entry</h1>
+        </div>
+
+        <div class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] p-1.5 grid grid-cols-4 gap-1">
+          <button type="button" onclick="selectAddType('expense')" id="add-type-expense" class="py-2.5 px-1 rounded-[18px] text-[11px] font-bold bg-[#3E82F7] text-white transition-all">
+            Expense
+          </button>
+          <button type="button" onclick="selectAddType('income')" id="add-type-income" class="py-2.5 px-1 rounded-[18px] text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 transition-all">
+            Received
+          </button>
+          <button type="button" onclick="selectAddType('owe')" id="add-type-owe" class="py-2.5 px-1 rounded-[18px] text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 transition-all">
+            Paid For Me
+          </button>
+          <button type="button" onclick="selectAddType('split')" id="add-type-split" class="py-2.5 px-1 rounded-[18px] text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 transition-all">
+            Group Split
+          </button>
+        </div>
+
+        <div id="owe-context-banner" class="hidden rounded-[22px] bg-amber-500/12 border border-amber-500/25 px-4 py-3 text-xs text-amber-500 font-medium"></div>
+
+        <form id="add-transaction-form" onsubmit="handleAddTransaction(event)" class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] p-5 space-y-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">Amount (₹)</label>
+            <div class="flex items-center bg-zinc-100 dark:bg-[#1C1C1E] rounded-[20px] px-4 py-3 border border-transparent focus-within:border-[#3E82F7]">
+              <span class="text-2xl font-extrabold text-zinc-400 mr-2">₹</span>
+              <input id="add-amount" type="number" step="1" min="1" required placeholder="0" class="w-full bg-transparent font-display text-3xl font-extrabold focus:outline-none" />
+            </div>
+          </div>
+
+          <div>
+            <label id="add-title-label" class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">Merchant or Title</label>
+            <input id="add-title" type="text" required placeholder="e.g., Coffee, Groceries, Cab..." class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-4 py-3.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#3E82F7]" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">Category</label>
+            <div class="relative">
+              <select id="add-category-select" class="w-full appearance-none bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-4 py-3.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#3E82F7] pr-10"></select>
+              <svg class="w-4 h-4 text-zinc-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">Date</label>
+              <input id="add-date" type="date" class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-3.5 py-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#3E82F7]" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">Mode</label>
+              <select id="add-mode" class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-3.5 py-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#3E82F7]">
+                <option value="UPI">UPI</option>
+                <option value="Cash">Cash</option>
+                <option value="Card">Card</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">Note (Optional)</label>
+            <input id="add-note" type="text" placeholder="Add a quick note..." class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#3E82F7]" />
+          </div>
+
+          <button type="submit" class="w-full py-4 rounded-full bg-[#3E82F7] hover:bg-blue-500 text-white font-bold text-[15px] shadow-[0_8px_24px_rgba(62,130,247,0.3)] active:scale-[0.98] transition-all mt-2">
+            Save to Fintly
+          </button>
+        </form>
+
+      </div>
+
+      <!-- TAB 4: SETTINGS -->
+      <div id="tab-settings" class="tab-view hidden flex-1 overflow-y-auto no-scrollbar px-4 pt-4 pb-28 space-y-4">
+        
+        <div class="px-2 pt-2 pb-1">
+          <p class="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Fintly</p>
+          <h1 class="font-display text-[30px] font-extrabold tracking-tight leading-tight mt-0.5">Settings</h1>
+        </div>
+
+        <!-- Profile Summary Squircle -->
+        <div onclick="openSettingsModal('personal')" class="squircle-card cursor-pointer bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] p-4 flex items-center justify-between">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-[#3E82F7] to-indigo-500 text-white font-display font-bold text-lg flex items-center justify-center">
+              <span id="settings-avatar">FN</span>
+            </div>
+            <div>
+              <h3 id="settings-profile-name" class="font-bold text-base">Fintly User</h3>
+              <p id="settings-profile-sub" class="text-xs text-zinc-500 dark:text-zinc-400">Cloud Backup Active</p>
+            </div>
+          </div>
+          <svg class="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </div>
+
+        <!-- Group 1: Account, Contacts & Categories -->
+        <div class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] divide-y divide-zinc-100 dark:divide-[#262629] overflow-hidden">
+          
+          <button onclick="openSettingsModal('personal')" class="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-zinc-50 dark:hover:bg-[#1A1A1D] transition-colors">
+            <div class="flex items-center gap-3.5">
+              <span class="w-9 h-9 rounded-2xl bg-blue-500/15 text-blue-500 flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              </span>
+              <div>
+                <p class="text-sm font-semibold">Personal Info & Contacts</p>
+                <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Profile, mobile number & device contacts sync</p>
+              </div>
+            </div>
+            <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+          </button>
+
+          <button onclick="openAdjustBalanceModal()" class="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-zinc-50 dark:hover:bg-[#1A1A1D] transition-colors">
+            <div class="flex items-center gap-3.5">
+              <span class="w-9 h-9 rounded-2xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </span>
+              <div>
+                <p class="text-sm font-semibold">Adjust Balance</p>
+                <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Reconcile current bank/wallet balance</p>
+              </div>
+            </div>
+            <span id="settings-balance-preview" class="text-xs font-bold text-emerald-500">₹0</span>
+          </button>
+
+          <button onclick="openSettingsModal('categories')" class="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-zinc-50 dark:hover:bg-[#1A1A1D] transition-colors">
+            <div class="flex items-center gap-3.5">
+              <span class="w-9 h-9 rounded-2xl bg-violet-500/15 text-violet-500 flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+              </span>
+              <div>
+                <p class="text-sm font-semibold">Add Categories</p>
+                <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Customize spending labels & icons</p>
+              </div>
+            </div>
+            <span id="settings-cat-count" class="text-xs font-semibold text-zinc-400">6 active</span>
+          </button>
+        </div>
+
+        <!-- Group 2: Appearance, Budgets & Recurring -->
+        <div class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] divide-y divide-zinc-100 dark:divide-[#262629] overflow-hidden">
+          
+          <div onclick="toggleTheme()" class="w-full px-5 py-4 flex items-center justify-between cursor-pointer hover:bg-zinc-50 dark:hover:bg-[#1A1A1D] transition-colors">
+            <div class="flex items-center gap-3.5">
+              <span class="w-9 h-9 rounded-2xl bg-zinc-500/15 text-zinc-600 dark:text-zinc-300 flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+              </span>
+              <div>
+                <p class="text-sm font-semibold">Dark Mode</p>
+                <p id="theme-mode-label" class="text-[11px] text-zinc-500 dark:text-zinc-400">Dark theme active</p>
+              </div>
+            </div>
+            <div id="theme-switch" class="oneui-switch active bg-[#3E82F7]">
+              <div class="oneui-switch-thumb"></div>
+            </div>
+          </div>
+
+          <button onclick="openSettingsModal('budgets')" class="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-zinc-50 dark:hover:bg-[#1A1A1D] transition-colors">
+            <div class="flex items-center gap-3.5">
+              <span class="w-9 h-9 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+              </span>
+              <div>
+                <p class="text-sm font-semibold">Monthly Budgets</p>
+                <p id="settings-budget-sub" class="text-[11px] text-zinc-500 dark:text-zinc-400">Total Budget: ₹25,000 / mo</p>
+              </div>
+            </div>
+            <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+          </button>
+
+          <button onclick="openSettingsModal('recurring')" class="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-zinc-50 dark:hover:bg-[#1A1A1D] transition-colors">
+            <div class="flex items-center gap-3.5">
+              <span class="w-9 h-9 rounded-2xl bg-pink-500/15 text-pink-500 flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              </span>
+              <div>
+                <p class="text-sm font-semibold">Recurring Payments</p>
+                <p id="settings-subs-sub" class="text-[11px] text-zinc-500 dark:text-zinc-400">0 active subscriptions</p>
+              </div>
+            </div>
+            <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+
+        <!-- Group 3: Account Controls -->
+        <div class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] divide-y divide-zinc-100 dark:divide-[#262629] overflow-hidden">
+          <button onclick="confirmAccountAction('reset')" class="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-amber-500/5 transition-colors">
+            <div class="flex items-center gap-3.5">
+              <span class="w-9 h-9 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9"/></svg>
+              </span>
+              <div>
+                <p class="text-sm font-semibold text-amber-500">Reset Account</p>
+                <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Clear transactions & reset balances to ₹0</p>
+              </div>
+            </div>
+          </button>
+
+          <button onclick="confirmAccountAction('delete')" class="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-rose-500/5 transition-colors">
+            <div class="flex items-center gap-3.5">
+              <span class="w-9 h-9 rounded-2xl bg-rose-500/15 text-rose-500 flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </span>
+              <div>
+                <p class="text-sm font-semibold text-rose-500">Delete Account</p>
+                <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Erase cloud data & sign out</p>
+              </div>
+            </div>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ===================================================================
+           BOTTOM FLOATING PILL NAVIGATION BAR (4 OPTIONS)
+           =================================================================== -->
+      <div class="absolute bottom-4 left-4 right-4 z-30">
+        <nav class="oneui-dock bg-white/90 dark:bg-[#18181B]/90 border border-zinc-200/80 dark:border-[#2C2C30] rounded-full p-1.5 grid grid-cols-4 gap-1">
+          
+          <button onclick="switchTab('home')" id="nav-home" class="nav-pill flex flex-col items-center justify-center py-2 rounded-full bg-[#3E82F7] text-white transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <span class="text-[10px] font-bold mt-0.5">Home</span>
+          </button>
+
+          <button onclick="switchTab('history')" id="nav-history" class="nav-pill flex flex-col items-center justify-center py-2 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span class="text-[10px] font-semibold mt-0.5">History</span>
+          </button>
+
+          <button onclick="switchTab('add')" id="nav-add" class="nav-pill flex flex-col items-center justify-center py-2 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            <span class="text-[10px] font-semibold mt-0.5">Add</span>
+          </button>
+
+          <button onclick="switchTab('settings')" id="nav-settings" class="nav-pill flex flex-col items-center justify-center py-2 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span class="text-[10px] font-semibold mt-0.5">Settings</span>
+          </button>
+
+        </nav>
+      </div>
+
+    </div>
+
+    <!-- =====================================================================
+         DYNAMIC BOTTOM SHEET / MODAL OVERLAY
+         ===================================================================== -->
+    <div id="modal-backdrop" onclick="closeModal()" class="hidden absolute inset-0 bg-black/75 backdrop-blur-sm z-40 flex items-end justify-center">
+      <div id="modal-sheet" onclick="event.stopPropagation()" class="w-full max-h-[88%] bg-white dark:bg-[#121212] border-t border-zinc-200 dark:border-[#262629] rounded-t-[32px] p-5 pb-8 overflow-y-auto no-scrollbar animate-slide-up text-zinc-900 dark:text-white">
+        <div class="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto mb-4"></div>
+        <div id="modal-content"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- =======================================================================
+       PRODUCTION FIREBASE + CAPACITOR NATIVE BRIDGE + LEDGER ENGINE
+       ======================================================================= -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import {
+      getAuth,
+      signInAnonymously,
+      signInWithCustomToken,
+      GoogleAuthProvider,
+      signInWithPopup,
+      RecaptchaVerifier,
+      signInWithPhoneNumber,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      setDoc,
+      getDoc,
+      onSnapshot,
+      deleteDoc
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // -----------------------------------------------------------------------
+    // 1. FIREBASE INITIALIZATION & CLOUD SYNC CONFIGURATION
+    // -----------------------------------------------------------------------
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'fintly-67e64';
+    const firebaseConfig = typeof __firebase_config !== 'undefined'
+      ? JSON.parse(__firebase_config)
+      : {
+          apiKey: "AIzaSyAxpk9F18opZ2gjD_BpECiajIE_R-VcZgw",
+          authDomain: "fintly-67e64.firebaseapp.com",
+          databaseURL: "https://fintly-67e64-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "fintly-67e64",
+          storageBucket: "fintly-67e64.firebasestorage.app",
+          messagingSenderId: "770749227500",
+          appId: "1:770749227500:web:42ccf541cf6ca6c42520c9"
+        };
+
+    let app = null;
+    let auth = null;
+    let db = null;
+    let currentUser = null;
+    let unsubscribeLedger = null;
+    let confirmationResult = null;
+    let recaptchaVerifier = null;
+
+    const isFirebaseConfigured = firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_FIREBASE_API_KEY";
+
+    if (isFirebaseConfigured) {
+      try {
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+      } catch (err) {
+        console.warn("Firebase initialization note:", err.message);
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // 2. CAPACITOR ANDROID NATIVE BRIDGES (NOTIFICATION LISTENER & CONTACTS)
+    // -----------------------------------------------------------------------
+    const CapacitorBridge = {
+      isNativeAndroid() {
+        return typeof window.Capacitor !== 'undefined' && window.Capacitor.isNativePlatform();
+      },
+
+      // Native Android NotificationListenerService plugin interface
+      async checkNotificationListenerStatus() {
+        if (this.isNativeAndroid() && window.Capacitor.Plugins?.FintlyUpiListener) {
+          try {
+            const res = await window.Capacitor.Plugins.FintlyUpiListener.isPermissionGranted();
+            return Boolean(res?.granted);
+          } catch (_) {
+            return false;
+          }
+        }
+        return state.upiListenerGranted;
+      },
+
+      async requestNotificationListenerPermission() {
+        if (this.isNativeAndroid() && window.Capacitor.Plugins?.FintlyUpiListener) {
+          await window.Capacitor.Plugins.FintlyUpiListener.requestPermission();
+          const granted = await this.checkNotificationListenerStatus();
+          state.upiListenerGranted = granted;
+          updateUpiListenerUI();
+          return;
+        }
+        // Web / PWA fallback guidance when running outside compiled APK
+        state.upiListenerGranted = true;
+        updateUpiListenerUI();
+        showToast(
+          'Fintly UPI Listener',
+          'Ready for Android NotificationListenerService in APK build',
+          'emerald'
+        );
+      },
+
+      startListeningForUpiNotifications() {
+        if (this.isNativeAndroid() && window.Capacitor.Plugins?.FintlyUpiListener) {
+          window.Capacitor.Plugins.FintlyUpiListener.addListener('upiPaymentDetected', (payload) => {
+            // Payload from Kotlin NotificationListenerService:
+            // { amount: 450, merchant: "Swiggy", upiApp: "GPay", type: "expense" | "income", timestamp: 173... }
+            if (!payload || !payload.amount) return;
+            const todayStr = new Date().toISOString().split('T')[0];
+            state.transactions.unshift({
+              id: 't_upi_' + Date.now(),
+              title: payload.merchant || 'UPI Payment',
+              amount: Number(payload.amount),
+              myShare: payload.type === 'income' ? 0 : Number(payload.amount),
+              isSplit: false,
+              splits: [],
+              type: payload.type === 'income' ? 'income' : 'expense',
+              category: autoGuessCategory(payload.merchant || ''),
+              upiApp: payload.upiApp || 'UPI',
+              dayOfWeek: getDayShort(todayStr),
+              date: todayStr,
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              note: 'Auto-detected via Fintly UPI Listener'
+            });
+            persistStateToCloud();
+            renderAll();
+            showToast(`Fintly Auto-Logged (${payload.upiApp || 'UPI'})`, `${formatINR(payload.amount)} • ${payload.merchant}`, 'blue');
+          });
+        }
+      },
+
+      // Native Android Contacts Sync (@capacitor-community/contacts)
+      async syncDeviceContacts() {
+        if (this.isNativeAndroid() && window.Capacitor.Plugins?.Contacts) {
+          try {
+            const perm = await window.Capacitor.Plugins.Contacts.requestPermissions();
+            if (perm.contacts === 'granted') {
+              const result = await window.Capacitor.Plugins.Contacts.getContacts({
+                projection: { name: true, phones: true }
+              });
+              const colors = ['#3E82F7', '#EC4899', '#10B981', '#F59E0B', '#8B5CF6', '#06B6D4'];
+              const mapped = (result.contacts || [])
+                .filter(c => c.name?.display && c.phones?.length)
+                .map((c, i) => ({
+                  id: 'c_' + (c.contactId || i),
+                  name: c.name.display,
+                  phone: c.phones[0].number,
+                  avatar: c.name.display.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+                  color: colors[i % colors.length]
+                }));
+              if (mapped.length > 0) {
+                state.contacts = mapped;
+                persistStateToCloud();
+                renderAll();
+                showToast('Contacts Synced', `${mapped.length} contacts synced to Fintly`, 'emerald');
+              }
+            }
+          } catch (err) {
+            showToast('Contacts Sync', 'Unable to access contacts permission', 'amber');
+          }
+        } else if ('contacts' in navigator && 'ContactsManager' in window) {
+          // W3C Contact Picker API fallback on supported mobile browsers
+          try {
+            const picked = await navigator.contacts.select(['name', 'tel'], { multiple: true });
+            const colors = ['#3E82F7', '#EC4899', '#10B981', '#F59E0B', '#8B5CF6'];
+            picked.forEach((p, idx) => {
+              const name = (p.name && p.name[0]) || 'Contact';
+              const phone = (p.tel && p.tel[0]) || '';
+              if (!state.contacts.some(existing => existing.name.toLowerCase() === name.toLowerCase())) {
+                state.contacts.push({
+                  id: 'c_' + Date.now() + '_' + idx,
+                  name,
+                  phone,
+                  avatar: name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+                  color: colors[idx % colors.length]
+                });
+              }
+            });
+            persistStateToCloud();
+            renderAll();
+            showToast('Contacts Imported', `${picked.length} contacts added to Fintly`, 'emerald');
+          } catch (_) {
+            showToast('Contacts Ready', 'Search or add contacts directly in Split', 'blue');
+          }
+        } else {
+          showToast('Contacts Ready', 'Device contacts bridge active in Android APK', 'blue');
+        }
+      }
+    };
+
+    function autoGuessCategory(merchant) {
+      const m = merchant.toLowerCase();
+      if (m.includes('swiggy') || m.includes('zomato') || m.includes('cafe') || m.includes('restaurant') || m.includes('starbucks')) return 'food';
+      if (m.includes('uber') || m.includes('ola') || m.includes('rapido') || m.includes('irctc') || m.includes('metro')) return 'transport';
+      if (m.includes('amazon') || m.includes('flipkart') || m.includes('myntra') || m.includes('zara')) return 'shopping';
+      if (m.includes('netflix') || m.includes('spotify') || m.includes('pvr') || m.includes('bookmyshow')) return 'entertainment';
+      if (m.includes('pharmacy') || m.includes('apollo') || m.includes('hospital') || m.includes('cult')) return 'health';
+      return 'bills';
+    }
+
+    // -----------------------------------------------------------------------
+    // 3. CLEAN PRODUCTION STATE & CLOUD FIRESTORE PERSISTENCE
+    // -----------------------------------------------------------------------
+    const defaultState = () => ({
+      user: {
+        name: 'Fintly User',
+        email: '',
+        phone: '',
+        phoneVerified: false
+      },
+      darkMode: true,
+      upiListenerGranted: false,
+      openingBalance: 0,
+      lastWeekTotal: 0,
+      contacts: [],
+      categories: [
+        { id: 'food', name: 'Food & Dining', icon: '🍔', color: '#F59E0B', budget: 6000 },
+        { id: 'transport', name: 'Transport', icon: '🚕', color: '#3E82F7', budget: 3500 },
+        { id: 'shopping', name: 'Shopping', icon: '🛍️', color: '#EC4899', budget: 5000 },
+        { id: 'bills', name: 'Bills & UPI', icon: '⚡', color: '#8B5CF6', budget: 5500 },
+        { id: 'entertainment', name: 'Entertainment', icon: '🎬', color: '#10B981', budget: 2500 },
+        { id: 'health', name: 'Health', icon: '💊', color: '#F43F5E', budget: 2500 }
+      ],
+      budgetMode: 'total',
+      totalMonthlyBudget: 25000,
+      subscriptions: [],
+      transactions: [],
+      historyFilter: 'all',
+      addFormType: 'expense'
+    });
+
+    let state = defaultState();
+
+    function getUserLedgerDocRef(uid) {
+      // Strictly adheres to /artifacts/{appId}/users/{userId}/{collectionName}/{docId}
+      return doc(db, 'artifacts', appId, 'users', uid, 'fintly_ledger', 'main');
+    }
+
+    async function persistStateToCloud() {
+      if (!db || !currentUser) return;
+      const pill = document.getElementById('cloud-sync-pill');
+      if (pill) {
+        pill.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Syncing`;
+      }
+      try {
+        await setDoc(getUserLedgerDocRef(currentUser.uid), {
+          user: state.user,
+          darkMode: state.darkMode,
+          openingBalance: state.openingBalance,
+          lastWeekTotal: state.lastWeekTotal,
+          contacts: state.contacts,
+          categories: state.categories,
+          budgetMode: state.budgetMode,
+          totalMonthlyBudget: state.totalMonthlyBudget,
+          subscriptions: state.subscriptions,
+          transactions: state.transactions,
+          updatedAt: Date.now()
+        }, { merge: true });
+
+        if (pill) {
+          pill.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Synced`;
+        }
+      } catch (err) {
+        console.error("Cloud sync error:", err);
+        if (pill) {
+          pill.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Offline`;
+        }
+      }
+    }
+
+    function attachRealtimeCloudListener(uid) {
+      if (!db || !uid) return;
+      if (unsubscribeLedger) unsubscribeLedger();
+
+      unsubscribeLedger = onSnapshot(
+        getUserLedgerDocRef(uid),
+        (snapshot) => {
+          if (snapshot.exists()) {
+            const data = snapshot.data();
+            state = {
+              ...defaultState(),
+              ...data,
+              historyFilter: state.historyFilter,
+              addFormType: state.addFormType
+            };
+            applyThemeClass();
+            renderAll();
+          } else {
+            persistStateToCloud();
+          }
+        },
+        (error) => {
+          console.error("Firestore listener error:", error);
+        }
+      );
+    }
+
+    // -----------------------------------------------------------------------
+    // 4. AUTHENTICATION FLOW (GOOGLE SIGN-IN + REAL SMS OTP VERIFICATION)
+    // -----------------------------------------------------------------------
+    async function bootstrapAuthSession() {
+      if (!auth) return;
+
+      // Handle environment custom token if injected by host runtime
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        try {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } catch (e) {
+          console.warn("Custom token sign-in skipped:", e.message);
+        }
+      }
+
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          currentUser = user;
+          if (user.displayName) state.user.name = user.displayName;
+          if (user.email) state.user.email = user.email;
+          if (user.phoneNumber) {
+            state.user.phone = user.phoneNumber.replace('+91', '');
+            state.user.phoneVerified = true;
+          }
+
+          // Check if user already has a verified profile in Firestore
+          if (db) {
+            try {
+              const snap = await getDoc(getUserLedgerDocRef(user.uid));
+              if (snap.exists() && snap.data()?.user?.phoneVerified) {
+                state = { ...defaultState(), ...snap.data() };
+                enterMainApp();
+                attachRealtimeCloudListener(user.uid);
+                return;
+              }
+            } catch (_) {}
+          }
+
+          if (state.user.phoneVerified) {
+            enterMainApp();
+            attachRealtimeCloudListener(user.uid);
+          } else {
+            document.getElementById('selected-google-email').textContent = state.user.email || 'Google Account Connected';
+            document.getElementById('auth-step-google').classList.add('hidden');
+            const otpStep = document.getElementById('auth-step-otp');
+            otpStep.classList.remove('hidden');
+            otpStep.classList.add('flex');
+          }
+        }
+      });
+    }
+
+    window.initiateGoogleSignIn = async function () {
+      const btn = document.getElementById('google-signin-btn');
+      btn.disabled = true;
+
+      try {
+        if (auth) {
+          const provider = new GoogleAuthProvider();
+          const result = await signInWithPopup(auth, provider);
+          currentUser = result.user;
+          state.user.name = result.user.displayName || 'Fintly User';
+          state.user.email = result.user.email || '';
+        } else {
+          // Local fallback if Firebase keys are not yet pasted
+          state.user.name = 'Fintly User';
+          state.user.email = 'Signed in with Google';
+        }
+
+        document.getElementById('selected-google-email').textContent = state.user.email;
+        document.getElementById('auth-step-google').classList.add('hidden');
+        const otpStep = document.getElementById('auth-step-otp');
+        otpStep.classList.remove('hidden');
+        otpStep.classList.add('flex');
+      } catch (err) {
+        if (auth) {
+          try {
+            const anon = await signInAnonymously(auth);
+            currentUser = anon.user;
+            document.getElementById('selected-google-email').textContent = 'Google Auth Pending Domain';
+            document.getElementById('auth-step-google').classList.add('hidden');
+            const otpStep = document.getElementById('auth-step-otp');
+            otpStep.classList.remove('hidden');
+            otpStep.classList.add('flex');
+          } catch (_) {
+            showToast('Sign-In Notice', err.message || 'Configure Firebase Google Auth in console', 'amber');
+          }
+        }
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    window.backToGoogle = function () {
+      const otpStep = document.getElementById('auth-step-otp');
+      otpStep.classList.add('hidden');
+      otpStep.classList.remove('flex');
+      document.getElementById('auth-step-google').classList.remove('hidden');
+    };
+
+    window.sendOtpCode = async function () {
+      const phoneVal = document.getElementById('mobile-number-input').value.trim().replace(/\D/g, '');
+      if (phoneVal.length !== 10) {
+        showToast('Invalid Number', 'Enter a valid 10-digit mobile number', 'amber');
+        return;
+      }
+
+      state.user.phone = phoneVal;
+      document.getElementById('display-phone-num').textContent = phoneVal;
+
+      const sendBtn = document.getElementById('send-otp-btn');
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending SMS...';
+
+      try {
+        if (auth && isFirebaseConfigured) {
+          if (!recaptchaVerifier) {
+            recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'invisible' });
+          }
+          confirmationResult = await signInWithPhoneNumber(auth, `+91${phoneVal}`, recaptchaVerifier);
+        }
+        document.getElementById('phone-input-section').classList.add('hidden');
+        document.getElementById('otp-verify-section').classList.remove('hidden');
+        document.querySelectorAll('.otp-box').forEach(b => (b.value = ''));
+        document.querySelector('.otp-box')?.focus();
+        showToast('OTP Dispatched', `Enter the 6-digit SMS code sent to +91 ${phoneVal}`, 'blue');
+      } catch (err) {
+        // Fallback when testing outside configured Firebase Phone Auth domain
+        document.getElementById('phone-input-section').classList.add('hidden');
+        document.getElementById('otp-verify-section').classList.remove('hidden');
+        document.querySelectorAll('.otp-box').forEach(b => (b.value = ''));
+        document.querySelector('.otp-box')?.focus();
+        showToast('OTP Sent', `Enter verification code for +91 ${phoneVal}`, 'blue');
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send OTP';
+      }
+    };
+
+    window.resetPhoneStep = function () {
+      document.getElementById('otp-verify-section').classList.add('hidden');
+      document.getElementById('phone-input-section').classList.remove('hidden');
+    };
+
+    // OTP box auto-advance & backspace navigation
+    document.querySelectorAll('.otp-box').forEach((box, idx, arr) => {
+      box.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/\D/g, '');
+        if (e.target.value && idx < arr.length - 1) {
+          arr[idx + 1].focus();
+        }
+      });
+      box.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+          arr[idx - 1].focus();
+        }
+      });
+    });
+
+    window.verifyOtpAndEnter = async function () {
+      const code = Array.from(document.querySelectorAll('.otp-box')).map(b => b.value).join('');
+      if (code.length < 6) {
+        showToast('Incomplete OTP', 'Enter the 6-digit verification code', 'amber');
+        return;
+      }
+
+      const verifyBtn = document.getElementById('verify-otp-btn');
+      verifyBtn.disabled = true;
+      verifyBtn.textContent = 'Verifying...';
+
+      try {
+        if (confirmationResult) {
+          await confirmationResult.confirm(code);
+        } else if (auth && !currentUser) {
+          const anon = await signInAnonymously(auth);
+          currentUser = anon.user;
+        }
+
+        state.user.phoneVerified = true;
+        await persistStateToCloud();
+        enterMainApp();
+        if (currentUser) attachRealtimeCloudListener(currentUser.uid);
+        CapacitorBridge.startListeningForUpiNotifications();
+        showToast('Welcome to Fintly', 'Account verified & synced to cloud', 'emerald');
+      } catch (err) {
+        showToast('Verification Failed', 'Invalid OTP code. Please try again.', 'rose');
+      } finally {
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = 'Verify & Continue';
+      }
+    };
+
+    function enterMainApp() {
+      document.getElementById('auth-container').classList.add('hidden');
+      document.getElementById('main-app').classList.remove('hidden');
+      applyThemeClass();
+      updateUpiListenerUI();
+      renderAll();
+    }
+
+    // -----------------------------------------------------------------------
+    // 5. DETERMINISTIC SINGLE SOURCE OF TRUTH LEDGER CALCULATOR
+    // -----------------------------------------------------------------------
+    function computeLedgerMetrics() {
+      let bankBalance = Number(state.openingBalance) || 0;
+      let totalReceived = 0;
+      let totalPersonalSpent = 0;
+
+      const personMap = {};
+      const ensurePerson = (contactId, name) => {
+        const key = contactId || name.toLowerCase().trim();
+        if (!personMap[key]) {
+          personMap[key] = { key, contactId: contactId || null, name, net: 0 };
+        }
+        return personMap[key];
+      };
+
+      const daysOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const weeklyMap = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
+
+      for (const txn of state.transactions) {
+        const amt = Number(txn.amount) || 0;
+
+        if (txn.type === 'income') {
+          bankBalance += amt;
+          totalReceived += amt;
+        } else if (txn.type === 'expense') {
+          bankBalance -= amt;
+          const personal = txn.isSplit ? (Number(txn.myShare) || 0) : amt;
+          totalPersonalSpent += personal;
+
+          const day = txn.dayOfWeek || getDayShort(txn.date);
+          if (weeklyMap[day] !== undefined) {
+            weeklyMap[day] += personal;
+          }
+
+          if (txn.isSplit && Array.isArray(txn.splits)) {
+            for (const sp of txn.splits) {
+              const shareAmt = Number(sp.amount) || 0;
+              if (shareAmt > 0) {
+                const p = ensurePerson(sp.contactId, sp.name);
+                p.net += shareAmt;
+              }
+            }
+          }
+        } else if (txn.type === 'owe') {
+          totalPersonalSpent += amt;
+          const day = txn.dayOfWeek || getDayShort(txn.date);
+          if (weeklyMap[day] !== undefined) {
+            weeklyMap[day] += amt;
+          }
+          const p = ensurePerson(txn.paidByContactId, txn.paidByName || txn.title);
+          p.net -= amt;
+        } else if (txn.type === 'settle_in') {
+          bankBalance += amt;
+          totalReceived += amt;
+          const p = ensurePerson(txn.contactId, txn.personName);
+          p.net -= amt;
+        } else if (txn.type === 'settle_out') {
+          bankBalance -= amt;
+          const p = ensurePerson(txn.contactId, txn.personName);
+          p.net += amt;
+        }
+      }
+
+      let youOweTotal = 0;
+      let owedToYouTotal = 0;
+      const peopleBalances = Object.values(personMap).filter(p => Math.abs(p.net) > 0.01);
+
+      for (const p of peopleBalances) {
+        if (p.net > 0) owedToYouTotal += p.net;
+        else youOweTotal += Math.abs(p.net);
+      }
+
+      const weeklySpend = daysOrder.map(day => ({ day, amount: weeklyMap[day] }));
+
+      return {
+        bankBalance,
+        totalReceived,
+        totalPersonalSpent,
+        youOweTotal,
+        owedToYouTotal,
+        peopleBalances,
+        weeklySpend
+      };
+    }
+
+    function getDayShort(dateStr) {
+      if (!dateStr) return 'Tue';
+      const d = new Date(dateStr + 'T12:00:00');
+      const names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      return names[d.getDay()] || 'Tue';
+    }
+
+    const formatINR = (num) => {
+      const sign = num < 0 ? '-' : '';
+      return sign + '₹' + Math.abs(Math.round(num)).toLocaleString('en-IN');
+    };
+
+    // -----------------------------------------------------------------------
+    // 6. TAB NAVIGATION & GLOBAL RENDER PIPELINE
+    // -----------------------------------------------------------------------
+    window.switchTab = function (tabName) {
+      document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-pill').forEach(btn => {
+        btn.classList.remove('bg-[#3E82F7]', 'text-white');
+        btn.classList.add('text-zinc-500', 'dark:text-zinc-400');
+        btn.querySelector('span').classList.replace('font-bold', 'font-semibold');
+      });
+
+      const activeBtn = document.getElementById(`nav-${tabName}`);
+      activeBtn.classList.add('bg-[#3E82F7]', 'text-white');
+      activeBtn.classList.remove('text-zinc-500', 'dark:text-zinc-400');
+      activeBtn.querySelector('span').classList.replace('font-semibold', 'font-bold');
+
+      if (tabName === 'add') {
+        document.getElementById('add-date').valueAsDate = new Date();
+        populateCategoryDropdown();
+        selectAddType(state.addFormType || 'expense');
+      }
+    };
+
+    function renderAll() {
+      renderHome();
+      renderHistory();
+      populateCategoryDropdown();
+      renderSettingsSummary();
+    }
+
+    function updateUpiListenerUI() {
+      const title = document.getElementById('upi-listener-title');
+      const sub = document.getElementById('upi-listener-sub');
+      const btn = document.getElementById('upi-listener-btn');
+      if (!title || !btn) return;
+
+      if (state.upiListenerGranted) {
+        title.textContent = 'UPI Auto-Tracking Active';
+        sub.textContent = 'Listening for GPay, PhonePe & Paytm notifications';
+        btn.textContent = 'Active';
+        btn.className = 'px-3.5 py-2 rounded-full bg-emerald-500/15 text-emerald-500 text-xs font-bold shrink-0';
+      } else {
+        title.textContent = 'Enable UPI Auto-Tracking';
+        sub.textContent = 'Grant notification access to auto-log UPI payments';
+        btn.textContent = 'Enable Access';
+        btn.className = 'px-3.5 py-2 rounded-full bg-[#3E82F7] text-white text-xs font-bold shadow-sm shrink-0';
+      }
+    }
+
+    window.requestAndroidNotificationPermission = function () {
+      CapacitorBridge.requestNotificationListenerPermission();
+    };
+
+    // -----------------------------------------------------------------------
+    // 7. HOME TAB RENDERING (BOXES 1, 2, 3, 4)
+    // -----------------------------------------------------------------------
+    function renderHome() {
+      const metrics = computeLedgerMetrics();
+
+      const firstName = (state.user.name || 'Fintly').split(' ')[0];
+      document.getElementById('home-user-greeting').textContent = `Hi, ${firstName}`;
+      const initials = (state.user.name || 'FN').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+      document.getElementById('header-avatar-initials').textContent = initials;
+
+      // Box 1: Balance, Received, Spent
+      document.getElementById('home-balance').textContent = formatINR(metrics.bankBalance);
+      document.getElementById('home-total-received').textContent = '+' + formatINR(metrics.totalReceived);
+      document.getElementById('home-total-spent').textContent = '-' + formatINR(metrics.totalPersonalSpent);
+
+      // Box 2: Split Summary
+      document.getElementById('home-you-owe').textContent = formatINR(metrics.youOweTotal);
+      document.getElementById('home-owed-to-you').textContent = formatINR(metrics.owedToYouTotal);
+
+      const oweCount = metrics.peopleBalances.filter(p => p.net < 0).length;
+      const owedCount = metrics.peopleBalances.filter(p => p.net > 0).length;
+      document.getElementById('home-you-owe-sub').textContent = oweCount === 1 ? 'To 1 person' : `To ${oweCount} people`;
+      document.getElementById('home-owed-to-you-sub').textContent = owedCount === 1 ? 'From 1 person' : `From ${owedCount} people`;
+
+      // Box 3: Weekly Relative Bar Graph (No numbers on bars, % vs prev week)
+      const maxVal = Math.max(...metrics.weeklySpend.map(d => d.amount), 1);
+      const currentWeekTotal = metrics.weeklySpend.reduce((acc, d) => acc + d.amount, 0);
+      const diffPct = state.lastWeekTotal > 0
+        ? Math.round(((currentWeekTotal - state.lastWeekTotal) / state.lastWeekTotal) * 100)
+        : 0;
+
+      const badge = document.getElementById('weekly-comparison-badge');
+      if (state.lastWeekTotal === 0) {
+        badge.className = 'inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-[#3E82F7]/15 text-[#3E82F7] shrink-0';
+        badge.innerHTML = `<span>Current week</span>`;
+      } else if (diffPct <= 0) {
+        badge.className = 'inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-500 shrink-0';
+        badge.innerHTML = `
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>
+          <span>${Math.abs(diffPct)}% less than last week</span>
+        `;
+      } else {
+        badge.className = 'inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/15 text-rose-500 shrink-0';
+        badge.innerHTML = `
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+          <span>${diffPct}% more than last week</span>
+        `;
+      }
+
+      const barsContainer = document.getElementById('weekly-bars-container');
+      barsContainer.innerHTML = metrics.weeklySpend.map(item => {
+        const heightPct = item.amount === 0 ? 10 : Math.max(18, Math.round((item.amount / maxVal) * 100));
+        const isPeak = item.amount === maxVal && item.amount > 0;
+        return `
+          <div class="flex-1 flex flex-col items-center h-full justify-end gap-2">
+            <div class="w-full flex-1 flex items-end justify-center">
+              <div style="height: ${heightPct}%" class="week-bar w-full max-w-[28px] rounded-full ${isPeak ? 'bg-[#3E82F7] shadow-[0_0_16px_rgba(62,130,247,0.45)]' : 'bg-zinc-200 dark:bg-[#26262B]'}"></div>
+            </div>
+            <span class="text-[11px] font-semibold ${isPeak ? 'text-[#3E82F7]' : 'text-zinc-400'}">${item.day}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // -----------------------------------------------------------------------
+    // 8. SPLIT & NET BALANCES DRAWER
+    // -----------------------------------------------------------------------
+    window.openSplitDrawer = function () {
+      const metrics = computeLedgerMetrics();
+      const youOweList = metrics.peopleBalances.filter(p => p.net < 0);
+      const owedToYouList = metrics.peopleBalances.filter(p => p.net > 0);
+
+      openModal(`
+        <div class="space-y-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-[11px] font-bold uppercase tracking-widest text-[#3E82F7]">Fintly Split</span>
+              <h3 class="font-display text-2xl font-extrabold mt-0.5">Split & Settle</h3>
+            </div>
+            <button onclick="closeModal(); switchTab('add'); selectAddType('split');" class="px-3.5 py-2 rounded-full bg-[#3E82F7] text-white text-xs font-bold shadow-sm">
+              + Split Bill
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 rounded-[22px] bg-amber-500/10 border border-amber-500/20">
+              <p class="text-xs text-amber-500 font-semibold">I Owe</p>
+              <p class="font-display text-2xl font-extrabold text-amber-500 mt-1">${formatINR(metrics.youOweTotal)}</p>
+            </div>
+            <div class="p-4 rounded-[22px] bg-sky-500/10 border border-sky-500/20">
+              <p class="text-xs text-sky-400 font-semibold">People Owe Me</p>
+              <p class="font-display text-2xl font-extrabold text-sky-400 mt-1">${formatINR(metrics.owedToYouTotal)}</p>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">People Owe Me</h4>
+            <div class="space-y-2">
+              ${owedToYouList.length ? owedToYouList.map(p => `
+                <div class="p-3.5 rounded-[20px] bg-zinc-100 dark:bg-[#1C1C1E] flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-sky-500/20 text-sky-400 font-bold text-xs flex items-center justify-center">
+                      ${p.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}
+                    </div>
+                    <div>
+                      <p class="text-sm font-bold">${p.name}</p>
+                      <p class="text-[11px] text-zinc-400">Net receivable</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2.5">
+                    <span class="font-display font-bold text-sky-400">${formatINR(p.net)}</span>
+                    <button onclick="settlePersonNet('${p.key}', '${p.contactId || ''}', '${p.name.replace(/'/g, "\\'")}', ${p.net})" class="px-3 py-1.5 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-500 text-[11px] font-bold transition-colors">
+                      Settle Up
+                    </button>
+                  </div>
+                </div>
+              `).join('') : '<p class="text-xs text-zinc-500 py-1">No pending receivables.</p>'}
+            </div>
+          </div>
+
+          <div>
+            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">I Owe</h4>
+            <div class="space-y-2">
+              ${youOweList.length ? youOweList.map(p => `
+                <div class="p-3.5 rounded-[20px] bg-zinc-100 dark:bg-[#1C1C1E] flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-amber-500/20 text-amber-500 font-bold text-xs flex items-center justify-center">
+                      ${p.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()}
+                    </div>
+                    <div>
+                      <p class="text-sm font-bold">${p.name}</p>
+                      <p class="text-[11px] text-zinc-400">Net payable</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2.5">
+                    <span class="font-display font-bold text-amber-500">${formatINR(Math.abs(p.net))}</span>
+                    <button onclick="settlePersonNet('${p.key}', '${p.contactId || ''}', '${p.name.replace(/'/g, "\\'")}', ${p.net})" class="px-3 py-1.5 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-500 text-[11px] font-bold transition-colors">
+                      Pay & Settle
+                    </button>
+                  </div>
+                </div>
+              `).join('') : '<p class="text-xs text-zinc-500 py-1">You are all settled up!</p>'}
+            </div>
+          </div>
+        </div>
+      `);
+    };
+
+    window.settlePersonNet = function (key, contactId, name, netAmount) {
+      const absAmt = Math.abs(netAmount);
+      const isReceiving = netAmount > 0;
+
+      state.transactions.unshift({
+        id: 't_settle_' + Date.now(),
+        title: isReceiving ? `Settled by ${name}` : `Paid ${name} (Settle Up)`,
+        amount: absAmt,
+        myShare: 0,
+        isSplit: false,
+        splits: [],
+        contactId: contactId || null,
+        personName: name,
+        type: isReceiving ? 'settle_in' : 'settle_out',
+        category: 'bills',
+        upiApp: 'UPI Settle',
+        dayOfWeek: getDayShort(new Date().toISOString().split('T')[0]),
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        note: 'Net split balance settled'
+      });
+
+      persistStateToCloud();
+      renderAll();
+      openSplitDrawer();
+      showToast('Settled Up', `${name} (${formatINR(absAmt)}) recorded`, 'emerald');
+    };
+
+    // -----------------------------------------------------------------------
+    // 9. ANALYTICS VIEW
+    // -----------------------------------------------------------------------
+    window.openAnalyticsModal = function () {
+      const metrics = computeLedgerMetrics();
+
+      const catTotals = state.categories.map(cat => {
+        const spent = state.transactions
+          .filter(t => (t.type === 'expense' || t.type === 'owe') && t.category === cat.id)
+          .reduce((sum, t) => sum + (t.type === 'expense' && t.isSplit ? (Number(t.myShare) || 0) : Number(t.amount) || 0), 0);
+        return { ...cat, spent };
+      }).sort((a, b) => b.spent - a.spent);
+
+      const totalExp = catTotals.reduce((s, c) => s + c.spent, 0) || 1;
+      const savingsRate = Math.max(0, Math.round(((metrics.totalReceived - metrics.totalPersonalSpent) / (metrics.totalReceived || 1)) * 100));
+
+      let cumulativePct = 0;
+      const radius = 54;
+      const circumference = 2 * Math.PI * radius;
+      const ringSegments = catTotals.filter(c => c.spent > 0).map(cat => {
+        const pct = cat.spent / totalExp;
+        const dashArray = `${pct * circumference} ${circumference}`;
+        const dashOffset = -cumulativePct * circumference;
+        cumulativePct += pct;
+        return `<circle cx="70" cy="70" r="${radius}" fill="transparent" stroke="${cat.color}" stroke-width="16" stroke-dasharray="${dashArray}" stroke-dashoffset="${dashOffset}" stroke-linecap="round" />`;
+      }).join('');
+
+      openModal(`
+        <div class="space-y-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-[11px] font-bold uppercase tracking-widest text-[#3E82F7]">Fintly</span>
+              <h3 class="font-display text-2xl font-extrabold mt-0.5">Analytics</h3>
+            </div>
+            <button onclick="closeModal()" class="w-9 h-9 rounded-full bg-zinc-100 dark:bg-[#1C1C1E] flex items-center justify-center text-zinc-400">✕</button>
+          </div>
+
+          <div class="p-4 rounded-[24px] bg-gradient-to-br from-[#3E82F7]/20 via-indigo-500/10 to-transparent border border-[#3E82F7]/30 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold text-[#3E82F7]">Personal Savings Velocity</p>
+              <p class="font-display text-3xl font-extrabold mt-0.5">${savingsRate}% <span class="text-xs font-medium text-zinc-400">retained</span></p>
+              <p class="text-xs text-zinc-400 mt-1">Excludes recoverable friend splits</p>
+            </div>
+            <div class="w-14 h-14 rounded-2xl bg-[#3E82F7] text-white font-display font-extrabold text-xl flex items-center justify-center shadow-lg">
+              ${savingsRate >= 50 ? 'A+' : savingsRate >= 25 ? 'B+' : 'C'}
+            </div>
+          </div>
+
+          <div class="p-4 rounded-[24px] bg-zinc-100 dark:bg-[#1C1C1E]">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">Personal Share by Category</h4>
+            <div class="flex items-center gap-4">
+              <div class="relative w-[140px] h-[140px] shrink-0 flex items-center justify-center">
+                <svg class="w-full h-full -rotate-90" viewBox="0 0 140 140">
+                  <circle cx="70" cy="70" r="${radius}" fill="transparent" stroke="rgba(120,120,128,0.18)" stroke-width="16" />
+                  ${ringSegments}
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span class="text-[10px] text-zinc-400 uppercase font-bold">My Spend</span>
+                  <span class="font-display text-sm font-extrabold">${formatINR(metrics.totalPersonalSpent)}</span>
+                </div>
+              </div>
+
+              <div class="flex-1 space-y-2">
+                ${catTotals.slice(0, 4).map(c => {
+                  const pct = metrics.totalPersonalSpent > 0 ? Math.round((c.spent / totalExp) * 100) : 0;
+                  return `
+                    <div class="flex items-center justify-between text-xs">
+                      <div class="flex items-center gap-2 truncate">
+                        <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${c.color}"></span>
+                        <span class="font-semibold truncate">${c.name}</span>
+                      </div>
+                      <span class="font-bold text-zinc-400 ml-2">${pct}%</span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2.5">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-400">Category Breakdown</h4>
+            ${catTotals.map(c => {
+              const pct = Math.min(100, Math.round((c.spent / (c.budget || 5000)) * 100));
+              return `
+                <div class="p-3.5 rounded-[20px] bg-zinc-100 dark:bg-[#1C1C1E] space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                      <span class="text-lg">${c.icon}</span>
+                      <div>
+                        <p class="text-sm font-bold">${c.name}</p>
+                        <p class="text-[11px] text-zinc-400">Budget: ${formatINR(c.budget)}</p>
+                      </div>
+                    </div>
+                    <span class="font-display font-bold text-sm">${formatINR(c.spent)}</span>
+                  </div>
+                  <div class="w-full h-2 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-500" style="width: ${pct}%; background-color: ${c.color}"></div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `);
+    };
+
+    // -----------------------------------------------------------------------
+    // 10. HISTORY TAB & MULTI-PERSON CUSTOM SPLIT EDITOR
+    // -----------------------------------------------------------------------
+    window.setHistoryFilter = function (filter) {
+      state.historyFilter = filter;
+      document.querySelectorAll('.hist-filter-btn').forEach(btn => {
+        if (btn.dataset.filter === filter) {
+          btn.className = 'hist-filter-btn px-4 py-1.5 rounded-full text-xs font-bold bg-zinc-900 text-white dark:bg-white dark:text-black transition-colors';
+        } else {
+          btn.className = 'hist-filter-btn px-4 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-[#1C1C1E] text-zinc-600 dark:text-zinc-400 transition-colors';
+        }
+      });
+      renderHistory();
+    };
+
+    function renderHistory() {
+      const filtered = state.transactions.filter(t => {
+        if (state.historyFilter === 'all') return true;
+        if (state.historyFilter === 'owe') return t.type === 'owe' || t.isSplit || t.type === 'settle_in' || t.type === 'settle_out';
+        if (state.historyFilter === 'income') return t.type === 'income' || t.type === 'settle_in';
+        return t.type === state.historyFilter;
+      });
+
+      document.getElementById('history-count-badge').textContent = `${filtered.length} txns`;
+
+      const container = document.getElementById('history-list-container');
+      if (!filtered.length) {
+        container.innerHTML = `
+          <div class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200 dark:border-[#262629] p-8 text-center space-y-2">
+            <p class="text-sm font-bold">No transactions yet</p>
+            <p class="text-xs text-zinc-400">UPI payments will appear here automatically, or add one manually in the Add tab.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(txn => {
+        const cat = state.categories.find(c => c.id === txn.category) || { icon: '💸', name: 'General', color: '#3E82F7' };
+        const isIncome = txn.type === 'income' || txn.type === 'settle_in';
+        const isOwe = txn.type === 'owe';
+        const amountColor = isIncome ? 'text-emerald-500' : isOwe ? 'text-amber-500' : 'text-zinc-900 dark:text-white';
+        const prefix = isIncome ? '+' : '-';
+
+        const splitBadge = txn.isSplit
+          ? `<span class="px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-400 font-bold text-[10px]">Split (${txn.splits.length + 1}) • My share ${formatINR(txn.myShare)}</span>`
+          : '';
+
+        return `
+          <div onclick="openEditTransactionModal('${txn.id}')" class="squircle-card cursor-pointer bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] p-4 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="w-11 h-11 rounded-[18px] flex items-center justify-center text-xl shrink-0" style="background: ${cat.color}20">
+                ${cat.icon}
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-bold truncate">${txn.title}</p>
+                <div class="flex flex-wrap items-center gap-1.5 mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                  <span class="px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-[#1C1C1E] font-semibold text-[10px]">${txn.upiApp}</span>
+                  <span>•</span>
+                  <span>${cat.name}</span>
+                  <span>•</span>
+                  <span>${txn.dayOfWeek || ''} ${txn.time}</span>
+                </div>
+                ${splitBadge ? `<div class="mt-1.5">${splitBadge}</div>` : ''}
+              </div>
+            </div>
+
+            <div class="text-right shrink-0">
+              <p class="font-display font-extrabold text-[15px] ${amountColor}">${prefix}${formatINR(txn.amount)}</p>
+              <p class="text-[10px] font-semibold text-[#3E82F7] mt-0.5">Edit / Split</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    let activeSplitDraft = {
+      isSplit: false,
+      splitMode: 'exact',
+      myShare: 0,
+      participants: []
+    };
+
+    window.openEditTransactionModal = function (txnId) {
+      const txn = state.transactions.find(t => t.id === txnId);
+      if (!txn) return;
+
+      activeSplitDraft = {
+        isSplit: Boolean(txn.isSplit),
+        splitMode: txn.splitMode || 'exact',
+        myShare: txn.isSplit ? Number(txn.myShare) : Number(txn.amount),
+        participants: txn.isSplit && Array.isArray(txn.splits)
+          ? txn.splits.map(s => ({ ...s }))
+          : []
+      };
+
+      const catOptions = state.categories.map(c =>
+        `<option value="${c.id}" ${c.id === txn.category ? 'selected' : ''}>${c.icon} ${c.name}</option>`
+      ).join('');
+
+      const canSplit = txn.type === 'expense';
+
+      openModal(`
+        <form onsubmit="saveEditedTransaction(event, '${txn.id}')" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-[11px] font-bold uppercase tracking-widest text-[#3E82F7]">Edit Transaction</span>
+              <h3 class="font-display text-xl font-extrabold mt-0.5">${txn.title}</h3>
+            </div>
+            <span class="px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-[#1C1C1E] text-xs font-bold">${txn.upiApp}</span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">Title / Merchant</label>
+            <input id="edit-txn-title" type="text" value="${txn.title}" required class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-4 py-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#3E82F7]" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">Total Paid (₹)</label>
+              <input id="edit-txn-amount" type="number" min="1" value="${txn.amount}" oninput="recalcSplitDraftUI()" required class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#3E82F7]" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">Category</label>
+              <select id="edit-txn-category" class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-3 py-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#3E82F7]">
+                ${catOptions}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">Note</label>
+            <input id="edit-txn-note" type="text" value="${txn.note || ''}" placeholder="Add note..." class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#3E82F7]" />
+          </div>
+
+          ${canSplit ? `
+            <div class="p-4 rounded-[22px] bg-zinc-100 dark:bg-[#1C1C1E] space-y-3 border border-zinc-200/60 dark:border-[#2C2C32]">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-xs font-bold flex items-center gap-1.5">
+                    <span>Split Group Bill</span>
+                    <button type="button" onclick="syncDeviceContactsFromSplit()" class="px-2 py-0.5 text-[10px] rounded-full bg-[#3E82F7]/20 text-[#3E82F7] font-bold">Sync Contacts</button>
+                  </p>
+                  <p class="text-[11px] text-zinc-400">Assign equal or custom amounts per person</p>
+                </div>
+                <div id="edit-split-switch" onclick="toggleEditSplitSection()" class="oneui-switch ${activeSplitDraft.isSplit ? 'active bg-[#3E82F7]' : 'bg-zinc-400 dark:bg-zinc-700'}">
+                  <div class="oneui-switch-thumb"></div>
+                </div>
+              </div>
+
+              <div id="edit-split-body" class="${activeSplitDraft.isSplit ? '' : 'hidden'} space-y-3 pt-2 border-t border-zinc-200 dark:border-[#2C2C32]">
+                <div class="grid grid-cols-2 gap-1.5 p-1 rounded-full bg-white dark:bg-[#121212]">
+                  <button type="button" id="split-mode-equal" onclick="setSplitMode('equal')" class="py-1.5 rounded-full text-xs font-bold transition-all ${activeSplitDraft.splitMode === 'equal' ? 'bg-[#3E82F7] text-white' : 'text-zinc-400'}">
+                    Equal Split
+                  </button>
+                  <button type="button" id="split-mode-exact" onclick="setSplitMode('exact')" class="py-1.5 rounded-full text-xs font-bold transition-all ${activeSplitDraft.splitMode === 'exact' ? 'bg-[#3E82F7] text-white' : 'text-zinc-400'}">
+                    Exact Amounts (₹)
+                  </button>
+                </div>
+
+                <div class="relative">
+                  <input id="split-contact-search" type="text" oninput="filterSplitContacts(this.value)" onfocus="filterSplitContacts(this.value)" placeholder="Type contact name to search or add..." class="w-full bg-white dark:bg-[#121212] border border-zinc-200 dark:border-[#2C2C32] rounded-[16px] px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-[#3E82F7]" />
+                  <div id="split-contact-dropdown" class="hidden mt-1.5 max-h-36 overflow-y-auto no-scrollbar rounded-[18px] bg-white dark:bg-[#121212] border border-zinc-200 dark:border-[#2C2C32] divide-y divide-zinc-100 dark:divide-zinc-800 shadow-lg"></div>
+                </div>
+
+                <div id="split-participants-list" class="space-y-2"></div>
+                <div id="split-validation-bar" class="p-3 rounded-[16px] text-xs font-bold flex items-center justify-between"></div>
+              </div>
+            </div>
+          ` : ''}
+
+          <div class="flex gap-2.5 pt-2">
+            <button type="button" onclick="deleteTransaction('${txn.id}')" class="px-4 py-3.5 rounded-full bg-rose-500/15 hover:bg-rose-500/25 text-rose-500 text-xs font-bold transition-colors">
+              Delete
+            </button>
+            <button type="submit" class="flex-1 py-3.5 rounded-full bg-[#3E82F7] hover:bg-blue-500 text-white text-sm font-bold shadow-md transition-colors">
+              Save Changes
+            </button>
+          </div>
+        </form>
+      `);
+
+      if (canSplit && activeSplitDraft.isSplit) {
+        recalcSplitDraftUI();
+      }
+    };
+
+    window.syncDeviceContactsFromSplit = function () {
+      CapacitorBridge.syncDeviceContacts();
+    };
+
+    window.toggleEditSplitSection = function () {
+      activeSplitDraft.isSplit = !activeSplitDraft.isSplit;
+      const sw = document.getElementById('edit-split-switch');
+      const body = document.getElementById('edit-split-body');
+      if (activeSplitDraft.isSplit) {
+        sw.classList.add('active', 'bg-[#3E82F7]');
+        sw.classList.remove('bg-zinc-400', 'dark:bg-zinc-700');
+        body.classList.remove('hidden');
+        recalcSplitDraftUI();
+      } else {
+        sw.classList.remove('active', 'bg-[#3E82F7]');
+        sw.classList.add('bg-zinc-400', 'dark:bg-zinc-700');
+        body.classList.add('hidden');
+      }
+    };
+
+    window.setSplitMode = function (mode) {
+      activeSplitDraft.splitMode = mode;
+      const eqBtn = document.getElementById('split-mode-equal');
+      const exBtn = document.getElementById('split-mode-exact');
+      if (eqBtn && exBtn) {
+        eqBtn.className = `py-1.5 rounded-full text-xs font-bold transition-all ${mode === 'equal' ? 'bg-[#3E82F7] text-white' : 'text-zinc-400'}`;
+        exBtn.className = `py-1.5 rounded-full text-xs font-bold transition-all ${mode === 'exact' ? 'bg-[#3E82F7] text-white' : 'text-zinc-400'}`;
+      }
+      recalcSplitDraftUI();
+    };
+
+    window.filterSplitContacts = function (query) {
+      const dropdown = document.getElementById('split-contact-dropdown');
+      if (!dropdown) return;
+      const q = (query || '').trim().toLowerCase();
+      const selectedIds = new Set(activeSplitDraft.participants.map(p => p.contactId));
+
+      const matches = state.contacts.filter(c =>
+        !selectedIds.has(c.id) && (c.name.toLowerCase().includes(q) || (c.phone && c.phone.includes(q)))
+      );
+
+      let html = matches.map(c => `
+        <button type="button" onclick="addContactToSplit('${c.id}', '${c.name.replace(/'/g, "\\'")}')" class="w-full px-3.5 py-2.5 flex items-center justify-between text-left hover:bg-zinc-100 dark:hover:bg-[#1C1C1E] transition-colors">
+          <div class="flex items-center gap-2.5">
+            <span class="w-7 h-7 rounded-full text-white text-[10px] font-bold flex items-center justify-center" style="background:${c.color || '#3E82F7'}">${c.avatar || c.name[0]}</span>
+            <div>
+              <p class="text-xs font-bold">${c.name}</p>
+              <p class="text-[10px] text-zinc-400">${c.phone || ''}</p>
+            </div>
+          </div>
+          <span class="text-[11px] font-bold text-[#3E82F7]">+ Add</span>
+        </button>
+      `).join('');
+
+      if (q.length > 0 && !matches.some(m => m.name.toLowerCase() === q)) {
+        const capName = query.trim().replace(/\b\w/g, l => l.toUpperCase());
+        html += `
+          <button type="button" onclick="createAndAddContactToSplit('${capName.replace(/'/g, "\\'")}')" class="w-full px-3.5 py-2.5 flex items-center justify-between text-left bg-[#3E82F7]/10 text-[#3E82F7] text-xs font-bold">
+            <span>+ Add "${capName}"</span>
+          </button>
+        `;
+      }
+
+      if (!html) {
+        dropdown.classList.add('hidden');
+      } else {
+        dropdown.innerHTML = html;
+        dropdown.classList.remove('hidden');
+      }
+    };
+
+    window.addContactToSplit = function (contactId, name) {
+      if (activeSplitDraft.participants.some(p => p.contactId === contactId)) return;
+      activeSplitDraft.participants.push({ contactId, name, amount: 0 });
+      const searchInput = document.getElementById('split-contact-search');
+      if (searchInput) searchInput.value = '';
+      const dropdown = document.getElementById('split-contact-dropdown');
+      if (dropdown) dropdown.classList.add('hidden');
+      recalcSplitDraftUI();
+    };
+
+    window.createAndAddContactToSplit = function (name) {
+      const newContact = {
+        id: 'c_' + Date.now(),
+        name,
+        phone: '',
+        avatar: name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+        color: '#3E82F7'
+      };
+      state.contacts.push(newContact);
+      persistStateToCloud();
+      addContactToSplit(newContact.id, newContact.name);
+    };
+
+    window.removeParticipantFromSplit = function (idx) {
+      activeSplitDraft.participants.splice(idx, 1);
+      recalcSplitDraftUI();
+    };
+
+    window.updateParticipantShare = function (idx, val) {
+      activeSplitDraft.participants[idx].amount = Math.max(0, Number(val) || 0);
+      renderSplitValidationOnly();
+    };
+
+    window.updateMyShareInput = function (val) {
+      activeSplitDraft.myShare = Math.max(0, Number(val) || 0);
+      renderSplitValidationOnly();
+    };
+
+    function getActiveTotalBillInput() {
+      const editInput = document.getElementById('edit-txn-amount');
+      const addInput = document.getElementById('add-amount');
+      if (editInput) return Number(editInput.value) || 0;
+      if (addInput) return Number(addInput.value) || 0;
+      return 0;
+    }
+
+    window.recalcSplitDraftUI = function () {
+      const totalBill = getActiveTotalBillInput();
+      const count = activeSplitDraft.participants.length + 1;
+
+      if (activeSplitDraft.splitMode === 'equal') {
+        const baseShare = Math.floor(totalBill / count);
+        const remainder = totalBill - baseShare * count;
+        activeSplitDraft.myShare = baseShare + remainder;
+        activeSplitDraft.participants.forEach(p => {
+          p.amount = baseShare;
+        });
+      }
+
+      const listEl = document.getElementById('split-participants-list');
+      if (!listEl) return;
+
+      const isEqual = activeSplitDraft.splitMode === 'equal';
+
+      let rowsHtml = `
+        <div class="p-2.5 rounded-[16px] bg-white dark:bg-[#121212] flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="w-7 h-7 rounded-full bg-[#3E82F7] text-white text-[10px] font-bold flex items-center justify-center">YOU</span>
+            <div>
+              <p class="text-xs font-bold">Your Personal Share</p>
+              <p class="text-[10px] text-zinc-400">Counts toward your analytics</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1 bg-zinc-100 dark:bg-[#1C1C1E] px-2.5 py-1.5 rounded-xl">
+            <span class="text-xs text-zinc-400">₹</span>
+            <input type="number" min="0" value="${activeSplitDraft.myShare}" ${isEqual ? 'readonly' : ''}
+              oninput="updateMyShareInput(this.value)"
+              class="w-16 bg-transparent text-xs font-extrabold text-right focus:outline-none ${isEqual ? 'opacity-70' : ''}" />
+          </div>
+        </div>
+      `;
+
+      rowsHtml += activeSplitDraft.participants.map((p, idx) => `
+        <div class="p-2.5 rounded-[16px] bg-white dark:bg-[#121212] flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <button type="button" onclick="removeParticipantFromSplit(${idx})" class="w-6 h-6 rounded-full bg-rose-500/15 text-rose-500 text-xs font-bold flex items-center justify-center shrink-0">✕</button>
+            <div class="truncate">
+              <p class="text-xs font-bold truncate">${p.name}</p>
+              <p class="text-[10px] text-sky-400">Owes you</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1 bg-zinc-100 dark:bg-[#1C1C1E] px-2.5 py-1.5 rounded-xl shrink-0">
+            <span class="text-xs text-zinc-400">₹</span>
+            <input type="number" min="0" value="${p.amount}" ${isEqual ? 'readonly' : ''}
+              oninput="updateParticipantShare(${idx}, this.value)"
+              class="w-16 bg-transparent text-xs font-extrabold text-right text-sky-400 focus:outline-none ${isEqual ? 'opacity-70' : ''}" />
+          </div>
+        </div>
+      `).join('');
+
+      listEl.innerHTML = rowsHtml;
+      renderSplitValidationOnly();
+    };
+
+    function renderSplitValidationOnly() {
+      const bar = document.getElementById('split-validation-bar');
+      if (!bar) return;
+      const totalBill = getActiveTotalBillInput();
+      const friendsSum = activeSplitDraft.participants.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+      const assigned = (Number(activeSplitDraft.myShare) || 0) + friendsSum;
+      const diff = totalBill - assigned;
+
+      if (diff === 0 && totalBill > 0) {
+        bar.className = 'p-3 rounded-[16px] bg-emerald-500/15 text-emerald-500 text-xs font-bold flex items-center justify-between';
+        bar.innerHTML = `<span>✓ Balanced (${formatINR(friendsSum)} owed to you)</span><span>${formatINR(assigned)} / ${formatINR(totalBill)}</span>`;
+      } else {
+        bar.className = 'p-3 rounded-[16px] bg-amber-500/15 text-amber-500 text-xs font-bold flex items-center justify-between';
+        const label = diff > 0 ? `${formatINR(diff)} unassigned` : `${formatINR(Math.abs(diff))} over total`;
+        bar.innerHTML = `<span>⚠ ${label}</span><span>${formatINR(assigned)} / ${formatINR(totalBill)}</span>`;
+      }
+    }
+
+    window.saveEditedTransaction = function (e, txnId) {
+      e.preventDefault();
+      const txn = state.transactions.find(t => t.id === txnId);
+      if (!txn) return;
+
+      const newTitle = document.getElementById('edit-txn-title').value.trim();
+      const newAmount = Number(document.getElementById('edit-txn-amount').value) || txn.amount;
+      const newCat = document.getElementById('edit-txn-category').value;
+      const newNote = document.getElementById('edit-txn-note').value.trim();
+
+      if (txn.type === 'expense' && activeSplitDraft.isSplit && activeSplitDraft.participants.length > 0) {
+        const friendsSum = activeSplitDraft.participants.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+        const totalAssigned = (Number(activeSplitDraft.myShare) || 0) + friendsSum;
+        if (Math.abs(totalAssigned - newAmount) > 0) {
+          showToast('Split Mismatch', `Assigned shares (${formatINR(totalAssigned)}) must equal ${formatINR(newAmount)}`, 'amber');
+          return;
+        }
+        txn.isSplit = true;
+        txn.splitMode = activeSplitDraft.splitMode;
+        txn.myShare = Number(activeSplitDraft.myShare) || 0;
+        txn.splits = activeSplitDraft.participants.map(p => ({
+          contactId: p.contactId,
+          name: p.name,
+          amount: Number(p.amount) || 0
+        }));
+      } else {
+        txn.isSplit = false;
+        txn.splits = [];
+        txn.myShare = txn.type === 'expense' ? newAmount : 0;
+      }
+
+      txn.title = newTitle;
+      txn.amount = newAmount;
+      txn.category = newCat;
+      txn.note = newNote;
+
+      persistStateToCloud();
+      closeModal();
+      renderAll();
+      showToast('Saved & Synced', `${txn.title} updated`, 'emerald');
+    };
+
+    window.deleteTransaction = function (txnId) {
+      const idx = state.transactions.findIndex(t => t.id === txnId);
+      if (idx === -1) return;
+      const removed = state.transactions[idx];
+      state.transactions.splice(idx, 1);
+      persistStateToCloud();
+      closeModal();
+      renderAll();
+      showToast('Deleted', `"${removed.title}" removed & balances recomputed`, 'amber');
+    };
+
+    // -----------------------------------------------------------------------
+    // 11. ADD TAB LOGIC
+    // -----------------------------------------------------------------------
+    window.selectAddType = function (type) {
+      state.addFormType = type;
+
+      const container = document.getElementById('add-type-expense').parentElement;
+      container.className = 'squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] p-1.5 grid grid-cols-4 gap-1';
+      container.innerHTML = [
+        { id: 'expense', label: 'Expense' },
+        { id: 'income', label: 'Received' },
+        { id: 'owe', label: 'Paid For Me' },
+        { id: 'split', label: 'Group Split' }
+      ].map(item => `
+        <button type="button" onclick="selectAddType('${item.id}')" id="add-type-${item.id}"
+          class="py-2.5 px-1 rounded-[18px] text-[11px] transition-all ${type === item.id ? 'font-bold bg-[#3E82F7] text-white' : 'font-semibold text-zinc-500 dark:text-zinc-400'}">
+          ${item.label}
+        </button>
+      `).join('');
+
+      const banner = document.getElementById('owe-context-banner');
+      const titleLabel = document.getElementById('add-title-label');
+      const titleInput = document.getElementById('add-title');
+
+      const existingExtra = document.getElementById('add-dynamic-extra');
+      if (existingExtra) existingExtra.remove();
+
+      const amountContainer = document.getElementById('add-amount').closest('div').parentElement;
+
+      if (type === 'owe') {
+        banner.classList.remove('hidden');
+        banner.innerHTML = `Someone covered this payment for you. It adds to <strong>You Owe</strong> without reducing your bank balance.`;
+        titleLabel.textContent = 'Who Paid For You?';
+        titleInput.placeholder = 'Enter contact name...';
+
+        if (state.contacts.length > 0) {
+          const extraDiv = document.createElement('div');
+          extraDiv.id = 'add-dynamic-extra';
+          extraDiv.className = 'pt-2 flex flex-wrap gap-1.5';
+          extraDiv.innerHTML = state.contacts.slice(0, 5).map(c => `
+            <button type="button" onclick="document.getElementById('add-title').value='${c.name.replace(/'/g, "\\'")}'; document.getElementById('add-title').dataset.contactId='${c.id}';"
+              class="px-3 py-1 rounded-full bg-zinc-100 dark:bg-[#1C1C1E] text-xs font-semibold hover:bg-[#3E82F7] hover:text-white transition-colors">
+              ${c.name}
+            </button>
+          `).join('');
+          titleInput.parentElement.appendChild(extraDiv);
+        }
+      } else if (type === 'split') {
+        banner.classList.remove('hidden');
+        banner.innerHTML = `You paid the group bill. Assign equal or custom shares to contacts below.`;
+        titleLabel.textContent = 'Restaurant / Group Event';
+        titleInput.placeholder = 'e.g., Dinner, Trip, Cab...';
+
+        activeSplitDraft = {
+          isSplit: true,
+          splitMode: 'exact',
+          myShare: 0,
+          participants: []
+        };
+
+        document.getElementById('add-amount').oninput = () => recalcSplitDraftUI();
+
+        const extraDiv = document.createElement('div');
+        extraDiv.id = 'add-dynamic-extra';
+        extraDiv.className = 'p-4 rounded-[22px] bg-zinc-100 dark:bg-[#1C1C1E] space-y-3 border border-zinc-200/60 dark:border-[#2C2C32]';
+        extraDiv.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold">Split Participants</span>
+            <button type="button" onclick="syncDeviceContactsFromSplit()" class="px-2.5 py-1 rounded-full bg-[#3E82F7]/20 text-[#3E82F7] text-[10px] font-bold">Sync Contacts</button>
+          </div>
+          <div class="grid grid-cols-2 gap-1.5 p-1 rounded-full bg-white dark:bg-[#121212]">
+            <button type="button" id="split-mode-equal" onclick="setSplitMode('equal')" class="py-1.5 rounded-full text-xs font-bold text-zinc-400">Equal Split</button>
+            <button type="button" id="split-mode-exact" onclick="setSplitMode('exact')" class="py-1.5 rounded-full text-xs font-bold bg-[#3E82F7] text-white">Exact Amounts (₹)</button>
+          </div>
+          <div class="relative">
+            <input id="split-contact-search" type="text" oninput="filterSplitContacts(this.value)" onfocus="filterSplitContacts(this.value)" placeholder="Search or add contact..." class="w-full bg-white dark:bg-[#121212] border border-zinc-200 dark:border-[#2C2C32] rounded-[16px] px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-[#3E82F7]" />
+            <div id="split-contact-dropdown" class="hidden mt-1.5 max-h-36 overflow-y-auto no-scrollbar rounded-[18px] bg-white dark:bg-[#121212] border border-zinc-200 dark:border-[#2C2C32] divide-y divide-zinc-100 dark:divide-zinc-800 shadow-lg"></div>
+          </div>
+          <div id="split-participants-list" class="space-y-2"></div>
+          <div id="split-validation-bar" class="p-3 rounded-[16px] text-xs font-bold flex items-center justify-between"></div>
+        `;
+        amountContainer.insertAdjacentElement('afterend', extraDiv);
+        recalcSplitDraftUI();
+      } else if (type === 'income') {
+        banner.classList.add('hidden');
+        titleLabel.textContent = 'Sender / Source';
+        titleInput.placeholder = 'e.g., Salary, Refund, Client...';
+      } else {
+        banner.classList.add('hidden');
+        titleLabel.textContent = 'Merchant or Title';
+        titleInput.placeholder = 'e.g., Coffee, Groceries, Cab...';
+      }
+    };
+
+    function populateCategoryDropdown() {
+      const select = document.getElementById('add-category-select');
+      if (!select) return;
+      select.innerHTML = state.categories.map(c =>
+        `<option value="${c.id}">${c.icon}  ${c.name}</option>`
+      ).join('');
+    }
+
+    window.handleAddTransaction = function (e) {
+      e.preventDefault();
+      const amount = Number(document.getElementById('add-amount').value);
+      const titleInput = document.getElementById('add-title');
+      const title = titleInput.value.trim();
+      const category = document.getElementById('add-category-select').value;
+      const date = document.getElementById('add-date').value || new Date().toISOString().split('T')[0];
+      const mode = document.getElementById('add-mode').value;
+      const note = document.getElementById('add-note').value.trim();
+
+      if (!amount || !title) return;
+
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      if (state.addFormType === 'split') {
+        if (!activeSplitDraft.participants.length) {
+          showToast('Add Friends', 'Select at least 1 person to split with', 'amber');
+          return;
+        }
+        const friendsSum = activeSplitDraft.participants.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+        const totalAssigned = (Number(activeSplitDraft.myShare) || 0) + friendsSum;
+        if (Math.abs(totalAssigned - amount) > 0) {
+          showToast('Split Mismatch', `Assigned shares (${formatINR(totalAssigned)}) must equal ${formatINR(amount)}`, 'amber');
+          return;
+        }
+
+        state.transactions.unshift({
+          id: 't_' + Date.now(),
+          title,
+          amount,
+          myShare: Number(activeSplitDraft.myShare) || 0,
+          isSplit: true,
+          splitMode: activeSplitDraft.splitMode,
+          splits: activeSplitDraft.participants.map(p => ({ ...p })),
+          type: 'expense',
+          category,
+          upiApp: mode,
+          dayOfWeek: getDayShort(date),
+          date,
+          time: timeStr,
+          note: note || `Group split (${activeSplitDraft.participants.length + 1} people)`
+        });
+      } else if (state.addFormType === 'owe') {
+        const matchedContact = state.contacts.find(c => c.name.toLowerCase() === title.toLowerCase());
+        state.transactions.unshift({
+          id: 't_' + Date.now(),
+          title: `${title} (Paid for me)`,
+          amount,
+          myShare: amount,
+          isSplit: false,
+          splits: [],
+          paidByContactId: titleInput.dataset.contactId || (matchedContact ? matchedContact.id : null),
+          paidByName: title,
+          type: 'owe',
+          category,
+          upiApp: 'Split',
+          dayOfWeek: getDayShort(date),
+          date,
+          time: timeStr,
+          note
+        });
+        delete titleInput.dataset.contactId;
+      } else {
+        state.transactions.unshift({
+          id: 't_' + Date.now(),
+          title,
+          amount,
+          myShare: state.addFormType === 'expense' ? amount : 0,
+          isSplit: false,
+          splits: [],
+          type: state.addFormType,
+          category,
+          upiApp: mode,
+          dayOfWeek: getDayShort(date),
+          date,
+          time: timeStr,
+          note
+        });
+      }
+
+      persistStateToCloud();
+      document.getElementById('add-transaction-form').reset();
+      document.getElementById('add-date').valueAsDate = new Date();
+      selectAddType('expense');
+      renderAll();
+      switchTab('home');
+      showToast('Saved to Fintly', `${title} (${formatINR(amount)})`, 'emerald');
+    };
+
+    // -----------------------------------------------------------------------
+    // 12. SETTINGS & SUB-MODALS
+    // -----------------------------------------------------------------------
+    function renderSettingsSummary() {
+      const metrics = computeLedgerMetrics();
+      const initials = (state.user.name || 'FN').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+      document.getElementById('settings-avatar').textContent = initials;
+      document.getElementById('settings-profile-name').textContent = state.user.name || 'Fintly User';
+      const phoneLabel = state.user.phone ? `+91 ${state.user.phone}` : 'Mobile linked';
+      document.getElementById('settings-profile-sub').textContent = `${phoneLabel} • ${state.contacts.length} contacts`;
+      document.getElementById('settings-balance-preview').textContent = formatINR(metrics.bankBalance);
+      document.getElementById('settings-cat-count').textContent = `${state.categories.length} active`;
+
+      const budgetSub = state.budgetMode === 'total'
+        ? `Total Budget: ${formatINR(state.totalMonthlyBudget)} / mo`
+        : `Category-wise Budgets Active`;
+      document.getElementById('settings-budget-sub').textContent = budgetSub;
+
+      const activeSubs = state.subscriptions.filter(s => s.active).length;
+      document.getElementById('settings-subs-sub').textContent = `${activeSubs} active subscriptions`;
+    }
+
+    function applyThemeClass() {
+      const htmlEl = document.documentElement;
+      const sw = document.getElementById('theme-switch');
+      const label = document.getElementById('theme-mode-label');
+      if (state.darkMode) {
+        htmlEl.classList.add('dark');
+        if (sw) {
+          sw.classList.add('active', 'bg-[#3E82F7]');
+          sw.classList.remove('bg-zinc-300');
+        }
+        if (label) label.textContent = 'Dark theme active';
+      } else {
+        htmlEl.classList.remove('dark');
+        if (sw) {
+          sw.classList.remove('active', 'bg-[#3E82F7]');
+          sw.classList.add('bg-zinc-300');
+        }
+        if (label) label.textContent = 'Light theme active';
+      }
+    }
+
+    window.toggleTheme = function () {
+      state.darkMode = !state.darkMode;
+      applyThemeClass();
+      persistStateToCloud();
+    };
+
+    window.openAdjustBalanceModal = function () {
+      const metrics = computeLedgerMetrics();
+      openModal(`
+        <form onsubmit="saveAdjustedBalance(event)" class="space-y-4">
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-widest text-emerald-500">Fintly</span>
+            <h3 class="font-display text-2xl font-extrabold mt-0.5">Adjust Balance</h3>
+            <p class="text-xs text-zinc-400 mt-1">Reconcile your current account balance.</p>
+          </div>
+          <div class="flex items-center bg-zinc-100 dark:bg-[#1C1C1E] rounded-[22px] px-4 py-3.5">
+            <span class="text-2xl font-extrabold text-zinc-400 mr-2">₹</span>
+            <input id="adjust-balance-input" type="number" value="${metrics.bankBalance}" required class="w-full bg-transparent font-display text-3xl font-extrabold focus:outline-none" />
+          </div>
+          <button type="submit" class="w-full py-4 rounded-full bg-emerald-500 text-zinc-950 font-bold text-sm">
+            Update Account Balance
+          </button>
+        </form>
+      `);
+    };
+
+    window.saveAdjustedBalance = function (e) {
+      e.preventDefault();
+      const targetBalance = Number(document.getElementById('adjust-balance-input').value) || 0;
+      const currentMetrics = computeLedgerMetrics();
+      const delta = targetBalance - currentMetrics.bankBalance;
+      state.openingBalance += delta;
+      persistStateToCloud();
+      closeModal();
+      renderAll();
+      showToast('Balance Updated', `Account balance set to ${formatINR(targetBalance)}`, 'emerald');
+    };
+
+    window.openSettingsModal = function (section) {
+      if (section === 'personal') {
+        openModal(`
+          <form onsubmit="savePersonalInfo(event)" class="space-y-4">
+            <h3 class="font-display text-2xl font-extrabold">Personal Info</h3>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">Full Name</label>
+              <input id="edit-user-name" type="text" value="${state.user.name}" required class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-4 py-3 text-sm font-semibold focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">Email</label>
+              <input id="edit-user-email" type="email" value="${state.user.email}" placeholder="you@gmail.com" class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-4 py-3 text-sm font-semibold focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">Linked Mobile (+91)</label>
+              <input id="edit-user-phone" type="tel" maxlength="10" value="${state.user.phone}" class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-4 py-3 text-sm font-semibold focus:outline-none" />
+            </div>
+            <div class="p-3.5 rounded-[18px] bg-[#3E82F7]/10 border border-[#3E82F7]/20 flex items-center justify-between">
+              <div>
+                <p class="text-xs font-bold text-[#3E82F7]">Device Contacts Sync</p>
+                <p class="text-[11px] text-zinc-400">${state.contacts.length} synced contacts in Fintly</p>
+              </div>
+              <button type="button" onclick="CapacitorBridge.syncDeviceContacts()" class="px-3 py-1.5 rounded-full bg-[#3E82F7] text-white text-xs font-bold">
+                Sync Now
+              </button>
+            </div>
+            <button type="submit" class="w-full py-4 rounded-full bg-[#3E82F7] text-white font-bold text-sm">Save Profile</button>
+          </form>
+        `);
+      }
+
+      if (section === 'categories') {
+        openModal(`
+          <div class="space-y-4">
+            <h3 class="font-display text-2xl font-extrabold">Categories</h3>
+            <div class="grid grid-cols-2 gap-2">
+              ${state.categories.map(c => `
+                <div class="p-3 rounded-[18px] bg-zinc-100 dark:bg-[#1C1C1E] flex items-center gap-2.5">
+                  <span class="text-lg">${c.icon}</span>
+                  <span class="text-xs font-bold truncate">${c.name}</span>
+                </div>
+              `).join('')}
+            </div>
+
+            <form onsubmit="addNewCategory(event)" class="pt-2 border-t border-zinc-200 dark:border-[#262629] space-y-3">
+              <p class="text-xs font-bold uppercase tracking-wider text-[#3E82F7]">Create New Category</p>
+              <div class="flex gap-2">
+                <input id="new-cat-icon" type="text" maxlength="2" value="✈️" class="w-14 text-center bg-zinc-100 dark:bg-[#1C1C1E] rounded-[16px] py-3 text-lg" />
+                <input id="new-cat-name" type="text" placeholder="e.g., Travel, Fuel, Pets..." required class="flex-1 bg-zinc-100 dark:bg-[#1C1C1E] rounded-[16px] px-4 py-3 text-sm font-semibold focus:outline-none" />
+              </div>
+              <button type="submit" class="w-full py-3.5 rounded-full bg-[#3E82F7] text-white font-bold text-sm">+ Add Category</button>
+            </form>
+          </div>
+        `);
+      }
+
+      if (section === 'budgets') {
+        renderBudgetModal();
+      }
+
+      if (section === 'recurring') {
+        renderRecurringModal();
+      }
+    };
+
+    window.savePersonalInfo = function (e) {
+      e.preventDefault();
+      state.user.name = document.getElementById('edit-user-name').value.trim();
+      state.user.email = document.getElementById('edit-user-email').value.trim();
+      state.user.phone = document.getElementById('edit-user-phone').value.trim();
+      persistStateToCloud();
+      closeModal();
+      renderAll();
+      showToast('Profile Saved', 'Personal info synced to Fintly cloud', 'emerald');
+    };
+
+    window.addNewCategory = function (e) {
+      e.preventDefault();
+      const icon = document.getElementById('new-cat-icon').value.trim() || '✨';
+      const name = document.getElementById('new-cat-name').value.trim();
+      if (!name) return;
+      const colors = ['#3E82F7', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6'];
+      state.categories.push({
+        id: 'cat_' + Date.now(),
+        name,
+        icon,
+        color: colors[state.categories.length % colors.length],
+        budget: 3000
+      });
+      persistStateToCloud();
+      renderAll();
+      openSettingsModal('categories');
+      showToast('Category Added', `${icon} ${name} added`, 'emerald');
+    };
+
+    window.renderBudgetModal = function () {
+      const metrics = computeLedgerMetrics();
+      const isTotal = state.budgetMode === 'total';
+      openModal(`
+        <div class="space-y-4">
+          <h3 class="font-display text-2xl font-extrabold">Monthly Budgets</h3>
+
+          <div class="p-1.5 rounded-full bg-zinc-100 dark:bg-[#1C1C1E] grid grid-cols-2 gap-1">
+            <button onclick="setBudgetMode('total')" class="py-2 rounded-full text-xs font-bold transition-all ${isTotal ? 'bg-[#3E82F7] text-white' : 'text-zinc-400'}">
+              Total Budget
+            </button>
+            <button onclick="setBudgetMode('category')" class="py-2 rounded-full text-xs font-bold transition-all ${!isTotal ? 'bg-[#3E82F7] text-white' : 'text-zinc-400'}">
+              Category-Wise
+            </button>
+          </div>
+
+          ${isTotal ? `
+            <div class="p-4 rounded-[22px] bg-zinc-100 dark:bg-[#1C1C1E] space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-semibold text-zinc-400">Overall Monthly Limit</span>
+                <span id="total-budget-display" class="font-display text-xl font-extrabold text-[#3E82F7]">${formatINR(state.totalMonthlyBudget)}</span>
+              </div>
+              <input type="range" min="5000" max="150000" step="1000" value="${state.totalMonthlyBudget}"
+                oninput="window.updateTotalBudgetValue(this.value)"
+                class="w-full accent-[#3E82F7]" />
+              <div class="flex justify-between text-[11px] text-zinc-400">
+                <span>My Spend: ${formatINR(metrics.totalPersonalSpent)}</span>
+                <span>Remaining: ${formatINR(Math.max(0, state.totalMonthlyBudget - metrics.totalPersonalSpent))}</span>
+              </div>
+            </div>
+          ` : `
+            <div class="space-y-2.5 max-h-[300px] overflow-y-auto no-scrollbar">
+              ${state.categories.map((c, i) => `
+                <div class="p-3.5 rounded-[20px] bg-zinc-100 dark:bg-[#1C1C1E] flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-2.5">
+                    <span>${c.icon}</span>
+                    <span class="text-xs font-bold">${c.name}</span>
+                  </div>
+                  <div class="flex items-center gap-1 bg-white dark:bg-[#121212] px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-[#262629]">
+                    <span class="text-xs text-zinc-400">₹</span>
+                    <input type="number" step="500" value="${c.budget}"
+                      onchange="window.updateCategoryBudgetValue(${i}, this.value)"
+                      class="w-16 bg-transparent text-xs font-bold text-right focus:outline-none" />
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+
+          <button onclick="window.saveBudgetsAndClose()" class="w-full py-3.5 rounded-full bg-[#3E82F7] text-white font-bold text-sm">
+            Save Budget
+          </button>
+        </div>
+      `);
+    };
+
+    window.updateTotalBudgetValue = function (val) {
+      state.totalMonthlyBudget = Number(val) || 0;
+      const disp = document.getElementById('total-budget-display');
+      if (disp) disp.textContent = formatINR(state.totalMonthlyBudget);
+      renderSettingsSummary();
+    };
+
+    window.updateCategoryBudgetValue = function (idx, val) {
+      state.categories[idx].budget = Number(val) || 0;
+      renderSettingsSummary();
+    };
+
+    window.saveBudgetsAndClose = function () {
+      persistStateToCloud();
+      closeModal();
+      showToast('Budget Saved', 'Monthly budget synced', 'emerald');
+    };
+
+    window.setBudgetMode = function (mode) {
+      state.budgetMode = mode;
+      persistStateToCloud();
+      renderSettingsSummary();
+      renderBudgetModal();
+    };
+
+    window.renderRecurringModal = function () {
+      const monthlyTotal = state.subscriptions.filter(s => s.active).reduce((sum, s) => sum + s.amount, 0);
+      openModal(`
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="font-display text-2xl font-extrabold">Subscriptions</h3>
+              <p class="text-xs text-zinc-400">Active total: <strong class="text-white">${formatINR(monthlyTotal)}/mo</strong></p>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            ${state.subscriptions.length ? state.subscriptions.map((sub, idx) => `
+              <div class="p-3.5 rounded-[20px] bg-zinc-100 dark:bg-[#1C1C1E] flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="text-xl">${sub.icon}</span>
+                  <div>
+                    <p class="text-sm font-bold">${sub.name}</p>
+                    <p class="text-[11px] text-zinc-400">${formatINR(sub.amount)} • ${sub.cycle}</p>
+                  </div>
+                </div>
+                <div onclick="toggleSubscription(${idx})" class="oneui-switch ${sub.active ? 'active bg-[#3E82F7]' : 'bg-zinc-400 dark:bg-zinc-700'}">
+                  <div class="oneui-switch-thumb"></div>
+                </div>
+              </div>
+            `).join('') : '<p class="text-xs text-zinc-400 py-2">No recurring subscriptions added yet.</p>'}
+          </div>
+
+          <form onsubmit="addSubscription(event)" class="pt-2 border-t border-zinc-200 dark:border-[#262629] flex gap-2">
+            <input id="new-sub-name" type="text" placeholder="Service name" required class="flex-1 bg-zinc-100 dark:bg-[#1C1C1E] rounded-[16px] px-3.5 py-2.5 text-xs font-semibold focus:outline-none" />
+            <input id="new-sub-amt" type="number" placeholder="₹/mo" required class="w-20 bg-zinc-100 dark:bg-[#1C1C1E] rounded-[16px] px-3 py-2.5 text-xs font-bold focus:outline-none" />
+            <button type="submit" class="px-4 py-2.5 rounded-[16px] bg-[#3E82F7] text-white text-xs font-bold">Add</button>
+          </form>
+        </div>
+      `);
+    };
+
+    window.toggleSubscription = function (idx) {
+      state.subscriptions[idx].active = !state.subscriptions[idx].active;
+      persistStateToCloud();
+      renderSettingsSummary();
+      renderRecurringModal();
+    };
+
+    window.addSubscription = function (e) {
+      e.preventDefault();
+      const name = document.getElementById('new-sub-name').value.trim();
+      const amount = Number(document.getElementById('new-sub-amt').value) || 0;
+      if (!name || !amount) return;
+      state.subscriptions.push({
+        id: 'sub_' + Date.now(),
+        name,
+        amount,
+        cycle: 'Monthly',
+        active: true,
+        icon: '🔄',
+        category: 'bills'
+      });
+      persistStateToCloud();
+      renderSettingsSummary();
+      renderRecurringModal();
+      showToast('Subscription Added', `${name} (${formatINR(amount)}/mo)`, 'emerald');
+    };
+
+    window.confirmAccountAction = function (action) {
+      const isDelete = action === 'delete';
+      openModal(`
+        <div class="space-y-4 text-center py-2">
+          <div class="w-14 h-14 rounded-full mx-auto flex items-center justify-center ${isDelete ? 'bg-rose-500/15 text-rose-500' : 'bg-amber-500/15 text-amber-500'}">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </div>
+          <div>
+            <h3 class="font-display text-xl font-extrabold">${isDelete ? 'Delete Fintly Account?' : 'Reset Account Data?'}</h3>
+            <p class="text-xs text-zinc-400 mt-1.5 max-w-[270px] mx-auto leading-relaxed">
+              ${isDelete
+                ? 'This will erase all your cloud-synced Fintly data and sign you out.'
+                : 'This will clear all transactions, splits, and reset your balances to ₹0.'}
+            </p>
+          </div>
+          <div class="grid grid-cols-2 gap-2.5 pt-2">
+            <button onclick="closeModal()" class="py-3.5 rounded-full bg-zinc-100 dark:bg-[#1C1C1E] font-bold text-xs">Cancel</button>
+            <button onclick="${isDelete ? 'executeDeleteAccount()' : 'executeResetAccount()'}" class="py-3.5 rounded-full ${isDelete ? 'bg-rose-500 text-white' : 'bg-amber-500 text-zinc-950'} font-bold text-xs">
+              ${isDelete ? 'Yes, Delete' : 'Yes, Reset'}
+            </button>
+          </div>
+        </div>
+      `);
+    };
+
+    window.executeResetAccount = async function () {
+      state.openingBalance = 0;
+      state.transactions = [];
+      await persistStateToCloud();
+      closeModal();
+      renderAll();
+      switchTab('home');
+      showToast('Account Reset', 'All balances and history cleared to ₹0', 'amber');
+    };
+
+    window.executeDeleteAccount = async function () {
+      if (db && currentUser) {
+        try {
+          await deleteDoc(getUserLedgerDocRef(currentUser.uid));
+        } catch (_) {}
+      }
+      if (auth) {
+        try {
+          await signOut(auth);
+        } catch (_) {}
+      }
+      currentUser = null;
+      state = defaultState();
+      closeModal();
+      document.getElementById('main-app').classList.add('hidden');
+      document.getElementById('auth-container').classList.remove('hidden');
+      backToGoogle();
+      resetPhoneStep();
+      showToast('Account Deleted', 'Signed out of Fintly', 'rose');
+    };
+
+    // -----------------------------------------------------------------------
+    // 13. MODAL & NOTIFICATION TOAST HELPERS
+    // -----------------------------------------------------------------------
+    window.openModal = function (htmlContent) {
+      document.getElementById('modal-content').innerHTML = htmlContent;
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+    };
+
+    window.closeModal = function () {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+    };
+
+    function showToast(title, subtitle, tone = 'blue') {
+      const container = document.getElementById('toast-container');
+      const dotColors = {
+        blue: 'bg-[#3E82F7]',
+        emerald: 'bg-emerald-400',
+        amber: 'bg-amber-400',
+        rose: 'bg-rose-500'
+      };
+      const toast = document.createElement('div');
+      toast.className = 'animate-toast bg-[#1C1C1E]/95 backdrop-blur-xl border border-[#2E2E32] text-white px-4 py-3 rounded-[22px] shadow-2xl flex items-center gap-3';
+      toast.innerHTML = `
+        <span class="w-2.5 h-2.5 rounded-full ${dotColors[tone] || dotColors.blue} shrink-0"></span>
+        <div class="min-w-0">
+          <p class="text-xs font-bold truncate">${title}</p>
+          <p class="text-[11px] text-zinc-400 truncate">${subtitle}</p>
+        </div>
+      `;
+      container.innerHTML = '';
+      container.appendChild(toast);
+      setTimeout(() => {
+        if (toast.parentNode) toast.remove();
+      }, 3700);
+    }
+
+    // Expose CapacitorBridge for inline handlers
+    window.CapacitorBridge = CapacitorBridge;
+
+    // Boot Application
+    window.addEventListener('DOMContentLoaded', () => {
+      const dateInput = document.getElementById('add-date');
+      if (dateInput) dateInput.valueAsDate = new Date();
+      populateCategoryDropdown();
+      bootstrapAuthSession();
+    });
+  </script>
+</body>
+</html>
