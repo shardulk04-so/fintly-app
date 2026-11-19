@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Fintly</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
@@ -140,6 +141,9 @@
   </style>
 </head>
 <body class="bg-black text-zinc-900 dark:text-white">
+
+  <!-- Hidden Mobile PDF File Picker Input -->
+  <input id="pdf-import-input" type="file" accept="application/pdf,.pdf" class="hidden" onchange="handlePdfFileSelected(event)" />
 
   <!-- Full-Screen Native App Shell -->
   <div id="app-shell" class="relative w-full max-w-md mx-auto h-full bg-zinc-100 dark:bg-black text-zinc-900 dark:text-white overflow-hidden flex flex-col transition-colors duration-300" style="padding-top: env(safe-area-inset-top);">
@@ -445,11 +449,12 @@
           <h1 class="font-display text-[30px] font-extrabold tracking-tight leading-tight mt-0.5">Add Entry</h1>
         </div>
 
-        <div id="add-type-bar" class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] p-1.5 grid grid-cols-4 gap-1">
-          <button type="button" onclick="selectAddType('expense')" id="add-type-expense" class="py-2.5 px-1 rounded-[18px] text-[11px] font-bold bg-[#3E82F7] text-white transition-all">Expense</button>
-          <button type="button" onclick="selectAddType('income')" id="add-type-income" class="py-2.5 px-1 rounded-[18px] text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 transition-all">Income</button>
-          <button type="button" onclick="selectAddType('owe')" id="add-type-owe" class="py-2.5 px-1 rounded-[18px] text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 transition-all">Paid For Me</button>
-          <button type="button" onclick="selectAddType('split')" id="add-type-split" class="py-2.5 px-1 rounded-[18px] text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 transition-all">Group Split</button>
+        <div id="add-type-bar" class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] p-1.5 grid grid-cols-5 gap-1">
+          <button type="button" onclick="selectAddType('expense')" id="add-type-expense" class="py-2.5 px-1 rounded-[16px] text-[10px] font-bold bg-[#3E82F7] text-white transition-all">Expense</button>
+          <button type="button" onclick="selectAddType('income')" id="add-type-income" class="py-2.5 px-1 rounded-[16px] text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 transition-all">Income</button>
+          <button type="button" onclick="selectAddType('owed_to_me')" id="add-type-owed_to_me" class="py-2.5 px-1 rounded-[16px] text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 transition-all">Owed to Me</button>
+          <button type="button" onclick="selectAddType('owe')" id="add-type-owe" class="py-2.5 px-1 rounded-[16px] text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 transition-all">I Owe</button>
+          <button type="button" onclick="selectAddType('split')" id="add-type-split" class="py-2.5 px-1 rounded-[16px] text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 transition-all">Split</button>
         </div>
 
         <form id="add-transaction-form" onsubmit="handleAddTransaction(event)" class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] p-5 space-y-4">
@@ -476,7 +481,7 @@
 
           <!-- Custom Squircle Category & Payment Mode Pickers -->
           <div class="grid grid-cols-2 gap-3">
-            <div>
+            <div id="add-category-wrapper">
               <label id="add-category-label" class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">Expense Category</label>
               <input type="hidden" id="add-category-value" value="" />
               <button type="button" onclick="openCustomCategoryPicker('add')" id="add-category-trigger" class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-3.5 py-3.5 text-xs font-bold flex items-center justify-between gap-1.5 text-left active:scale-[0.98] transition-transform">
@@ -485,7 +490,7 @@
               </button>
             </div>
 
-            <div>
+            <div id="add-mode-wrapper">
               <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">Mode</label>
               <input type="hidden" id="add-mode-value" value="UPI" />
               <button type="button" onclick="openCustomModePicker()" id="add-mode-trigger" class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-3.5 py-3.5 text-xs font-bold flex items-center justify-between gap-1.5 text-left active:scale-[0.98] transition-transform">
@@ -540,7 +545,36 @@
           <svg class="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
         </div>
 
-        <!-- Group 1: Account, Contacts & Categories -->
+        <!-- Group 1: Import Statement & Debt / Receivable Manager -->
+        <div class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] divide-y divide-zinc-100 dark:divide-[#262629] overflow-hidden">
+          <button onclick="triggerPdfFilePicker()" class="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-zinc-50 dark:hover:bg-[#1A1A1D] transition-colors">
+            <div class="flex items-center gap-3.5">
+              <span class="w-9 h-9 rounded-2xl bg-[#3E82F7]/15 text-[#3E82F7] flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+              </span>
+              <div>
+                <p class="text-sm font-semibold">Import PDF Statement</p>
+                <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Choose a PDF file from mobile storage to import</p>
+              </div>
+            </div>
+            <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+          </button>
+
+          <button onclick="openAddDebtReceivableModal('owed_to_me')" class="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-zinc-50 dark:hover:bg-[#1A1A1D] transition-colors">
+            <div class="flex items-center gap-3.5">
+              <span class="w-9 h-9 rounded-2xl bg-sky-500/15 text-sky-400 flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+              </span>
+              <div>
+                <p class="text-sm font-semibold">Add Receivable / Debt</p>
+                <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Record money someone owes you or you owe</p>
+              </div>
+            </div>
+            <span id="settings-receivable-preview" class="text-xs font-bold text-sky-400">₹0</span>
+          </button>
+        </div>
+
+        <!-- Group 2: Account, Contacts & Categories -->
         <div class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] divide-y divide-zinc-100 dark:divide-[#262629] overflow-hidden">
           <button onclick="openSettingsModal('personal')" class="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-zinc-50 dark:hover:bg-[#1A1A1D] transition-colors">
             <div class="flex items-center gap-3.5">
@@ -582,7 +616,7 @@
           </button>
         </div>
 
-        <!-- Group 2: Appearance, Budgets & Recurring -->
+        <!-- Group 3: Appearance, Budgets & Recurring -->
         <div class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] divide-y divide-zinc-100 dark:divide-[#262629] overflow-hidden">
           <div onclick="toggleTheme()" class="w-full px-5 py-4 flex items-center justify-between cursor-pointer hover:bg-zinc-50 dark:hover:bg-[#1A1A1D] transition-colors">
             <div class="flex items-center gap-3.5">
@@ -626,7 +660,7 @@
           </button>
         </div>
 
-        <!-- Group 3: Account Controls -->
+        <!-- Group 4: Account Controls -->
         <div class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200/80 dark:border-[#262629] divide-y divide-zinc-100 dark:divide-[#262629] overflow-hidden">
           <button onclick="confirmAccountAction('reset')" class="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-amber-500/5 transition-colors">
             <div class="flex items-center gap-3.5">
@@ -707,7 +741,7 @@
   </div>
 
   <!-- =======================================================================
-       PRODUCTION FIREBASE + CAPACITOR NATIVE BRIDGE + LEDGER ENGINE
+       PRODUCTION FIREBASE + CAPACITOR NATIVE BRIDGE + PDF IMPORT + LEDGER ENGINE
        ======================================================================= -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -732,6 +766,10 @@
       deleteDoc
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+    if (typeof window.pdfjsLib !== 'undefined') {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'fintly-67e64';
     const firebaseConfig = typeof __firebase_config !== 'undefined'
       ? JSON.parse(__firebase_config)
@@ -746,7 +784,7 @@
         };
 
     const GOOGLE_WEB_CLIENT_ID = "770749227500-bcuelbshtnapo4ndmm7tnnhmvbpjuqhm.apps.googleusercontent.com";
-    const LOCAL_CACHE_KEY = "fintly_persistent_state_v4";
+    const LOCAL_CACHE_KEY = "fintly_persistent_state_v5";
 
     let app = null;
     let auth = null;
@@ -758,6 +796,7 @@
     let activeTabName = 'home';
     let lastBackPressTime = 0;
     let manageCategoryTab = 'expense';
+    let pendingPdfImportEntries = [];
 
     const isFirebaseConfigured = firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_FIREBASE_API_KEY";
 
@@ -958,18 +997,452 @@
       const findCat = (keyword) => pool.find(c => c.id.includes(keyword) || c.name.toLowerCase().includes(keyword))?.id;
 
       if (txnType === 'income') {
-        if (m.includes('salary') || m.includes('payroll') || m.includes('stipend')) return findCat('salary') || pool[0].id;
+        if (m.includes('salary') || m.includes('payroll') || m.includes('stipend') || m.includes('baba')) return findCat('salary') || pool[0].id;
         if (m.includes('pocket') || m.includes('mom') || m.includes('dad')) return findCat('pocket') || pool[0].id;
         if (m.includes('refund') || m.includes('cashback')) return findCat('refund') || pool[0].id;
-        return pool[0].id;
+        return findCat('other') || pool[0].id;
       }
 
-      if (m.includes('swiggy') || m.includes('zomato') || m.includes('cafe') || m.includes('coffee') || m.includes('restaurant')) return findCat('food') || pool[0].id;
-      if (m.includes('uber') || m.includes('ola') || m.includes('rapido') || m.includes('metro')) return findCat('transport') || pool[0].id;
-      if (m.includes('irctc') || m.includes('flight') || m.includes('makemytrip') || m.includes('hotel')) return findCat('travel') || pool[0].id;
-      if (m.includes('bill') || m.includes('electricity') || m.includes('recharge') || m.includes('wifi')) return findCat('bills') || pool[0].id;
+      if (m.includes('swiggy') || m.includes('zomato') || m.includes('cafe') || m.includes('coffee') || m.includes('restaurant') || m.includes('food') || m.includes('dhun') || m.includes('aroma') || m.includes('amul') || m.includes('h2') || m.includes('hostel') || m.includes('instamart')) return findCat('food') || pool[0].id;
+      if (m.includes('uber') || m.includes('ola') || m.includes('rapido') || m.includes('metro') || m.includes('auto') || m.includes('transportation')) return findCat('transport') || pool[0].id;
+      if (m.includes('irctc') || m.includes('flight') || m.includes('makemytrip') || m.includes('hotel') || m.includes('ixigo') || m.includes('redbus') || m.includes('travel')) return findCat('travel') || pool[0].id;
+      if (m.includes('bill') || m.includes('electricity') || m.includes('recharge') || m.includes('wifi') || m.includes('bsnl')) return findCat('bills') || pool[0].id;
+      if (m.includes('zepto') || m.includes('shopping')) return findCat('shopping') || pool[0].id;
+      if (m.includes('salon') || m.includes('personal care') || m.includes('health') || m.includes('pharmacy')) return findCat('health') || pool[0].id;
       return pool[0].id;
     }
+
+    // -----------------------------------------------------------------------
+    // MOBILE PDF STATEMENT IMPORT ENGINE (GENERIC PDF PARSER)
+    // -----------------------------------------------------------------------
+    window.triggerPdfFilePicker = function () {
+      const input = document.getElementById('pdf-import-input');
+      if (input) {
+        input.value = '';
+        input.click();
+      }
+    };
+
+    window.handlePdfFileSelected = async function (event) {
+      const file = event.target?.files?.[0];
+      if (!file) return;
+
+      openModal(`
+        <div class="py-8 text-center space-y-3">
+          <div class="w-12 h-12 rounded-full border-4 border-[#3E82F7]/30 border-t-[#3E82F7] animate-spin mx-auto"></div>
+          <h3 class="font-display text-lg font-extrabold">Reading PDF Statement</h3>
+          <p class="text-xs text-zinc-400">Extracting dates, entries & amounts...</p>
+        </div>
+      `);
+
+      try {
+        if (typeof window.pdfjsLib === 'undefined') {
+          throw new Error('PDF reader library still loading. Please try again.');
+        }
+
+        const arrayBuffer = await file.arrayBuffer();
+        const pdfDoc = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+        let allLines = [];
+        for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+          const page = await pdfDoc.getPage(pageNum);
+          const textContent = await page.getTextContent();
+          const items = textContent.items.filter(it => it.str && it.str.trim());
+
+          // Group items into horizontal rows by Y coordinate (within 5pt tolerance)
+          const rows = [];
+          for (const item of items) {
+            const y = item.transform[5];
+            const x = item.transform[4];
+            let row = rows.find(r => Math.abs(r.y - y) <= 5.5);
+            if (!row) {
+              row = { y, items: [] };
+              rows.push(row);
+            }
+            row.items.push({ x, str: item.str.trim() });
+          }
+
+          rows.sort((a, b) => b.y - a.y);
+          for (const r of rows) {
+            r.items.sort((a, b) => a.x - b.x);
+            allLines.push(r.items.map(i => i.str).join(' '));
+          }
+        }
+
+        const parsedEntries = parseGenericStatementLines(allLines);
+        pendingPdfImportEntries = parsedEntries;
+
+        if (!parsedEntries.length) {
+          openModal(`
+            <div class="space-y-4 text-center py-4">
+              <h3 class="font-display text-xl font-extrabold">No Entries Detected</h3>
+              <p class="text-xs text-zinc-400 leading-relaxed">
+                Could not find dated transaction rows in this PDF. Make sure the file is a text-based transaction statement PDF.
+              </p>
+              <button onclick="closeModal()" class="w-full py-3.5 rounded-full bg-[#3E82F7] text-white font-bold text-sm">Close</button>
+            </div>
+          `);
+          return;
+        }
+
+        renderPdfImportPreviewModal(file.name, parsedEntries);
+      } catch (err) {
+        console.error('PDF Parse Error:', err);
+        openModal(`
+          <div class="space-y-4 text-center py-4">
+            <h3 class="font-display text-xl font-extrabold text-rose-500">Import Error</h3>
+            <p class="text-xs text-zinc-400">${err.message || 'Could not read the selected PDF file.'}</p>
+            <button onclick="closeModal()" class="w-full py-3.5 rounded-full bg-zinc-800 text-white font-bold text-sm">Close</button>
+          </div>
+        `);
+      }
+    };
+
+    function parseGenericStatementLines(lines) {
+      const monthMap = {
+        jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+        jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
+      };
+
+      const dateRegex = /\b(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(20\d{2})\b/i;
+      const numericDateRegex = /\b(\d{1,2})[\/\-](\d{1,2})[\/\-](20\d{2})\b/;
+      // Matches +₹10,000 | -₹1,160.85 | - 377 | + 240 | -₹22
+      const amountRegex = /([+-])\s*₹?\s*(\d[\d,]*(?:\.\d{1,2})?)/g;
+
+      const ignoreNoise = /^(DATE|DESCRIPTION|ACCOUNT|AMOUNT|TRANSACTION STATEMENT|INCOME|SPENT|NET|ENTRIES|Amounts in INR|Prepared for|Generated|Exported|SBI|State Bank|India\)|In ₹|Out ₹)/i;
+
+      const results = [];
+      let currentBlock = null;
+
+      const flushBlock = () => {
+        if (!currentBlock) return;
+        const fullText = currentBlock.texts.join(' ').replace(/\s+/g, ' ').trim();
+
+        const amounts = [];
+        let m;
+        amountRegex.lastIndex = 0;
+        while ((m = amountRegex.exec(fullText)) !== null) {
+          const sign = m[1];
+          const val = round2(parseFloat(m[2].replace(/,/g, '')));
+          if (val > 0) amounts.push({ sign, val, raw: m[0] });
+        }
+
+        // Remove amounts & bank boilerplate to isolate clean descriptions
+        let cleanText = fullText
+          .replace(amountRegex, ' ')
+          .replace(/SBI\s*\(State Bank of\s*India\)/gi, ' ')
+          .replace(/State Bank of\s*India\)?/gi, ' ')
+          .replace(/\bSBI\b/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        const knownCats = ['Food', 'Transportation', 'Travel', 'Shopping', 'Bills', 'Personal Care', 'Salary', 'Other Income'];
+
+        if (amounts.length === 1) {
+          const { sign, val } = amounts[0];
+          const type = sign === '+' ? 'income' : 'expense';
+          let title = cleanText;
+          for (const kc of knownCats) {
+            const re = new RegExp(`\\b${kc}\\b`, 'i');
+            if (re.test(title) && title.replace(re, '').trim().length >= 2) {
+              title = title.replace(re, '').trim();
+              break;
+            }
+          }
+          title = title.replace(/^[-:|•\s]+|[-:|•\s]+$/g, '') || (type === 'income' ? 'Imported Income' : 'Imported Expense');
+          results.push({
+            date: currentBlock.date,
+            title,
+            amount: val,
+            type,
+            category: autoGuessCategory(cleanText || title, type)
+          });
+        } else if (amounts.length > 1) {
+          // Handle merged multi-entry rows on the same date (e.g. Ixigo -₹1,161 & RedBus -₹1,160.85)
+          const segments = cleanText.split(/\s{2,}|(?=\b(?:Ixigo|RedBus|Zepto|Naveen|Auto|Lakshya|Sagar|InstaMart|Amul|Aroma|Food)\b)/i).filter(Boolean);
+          amounts.forEach((amtObj, idx) => {
+            const type = amtObj.sign === '+' ? 'income' : 'expense';
+            let segTitle = (segments[idx] || cleanText || (type === 'income' ? 'Imported Income' : 'Imported Expense')).trim();
+            for (const kc of knownCats) {
+              const re = new RegExp(`\\b${kc}\\b`, 'i');
+              if (re.test(segTitle) && segTitle.replace(re, '').trim().length >= 2) {
+                segTitle = segTitle.replace(re, '').trim();
+                break;
+              }
+            }
+            segTitle = segTitle.replace(/^[-:|•\s]+|[-:|•\s]+$/g, '') || (type === 'income' ? 'Imported Income' : 'Imported Expense');
+            results.push({
+              date: currentBlock.date,
+              title: segTitle,
+              amount: amtObj.val,
+              type,
+              category: autoGuessCategory(segTitle, type)
+            });
+          });
+        }
+        currentBlock = null;
+      };
+
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) continue;
+
+        let foundDateISO = null;
+        let remainder = line;
+
+        const dMatch = line.match(dateRegex);
+        if (dMatch) {
+          const day = String(dMatch[1]).padStart(2, '0');
+          const mon = monthMap[dMatch[2].slice(0, 3).toLowerCase()];
+          const yr = dMatch[3];
+          foundDateISO = `${yr}-${mon}-${day}`;
+          remainder = line.replace(dMatch[0], ' ').trim();
+        } else {
+          const nMatch = line.match(numericDateRegex);
+          if (nMatch) {
+            const day = String(nMatch[1]).padStart(2, '0');
+            const mon = String(nMatch[2]).padStart(2, '0');
+            const yr = nMatch[3];
+            foundDateISO = `${yr}-${mon}-${day}`;
+            remainder = line.replace(nMatch[0], ' ').trim();
+          }
+        }
+
+        if (foundDateISO) {
+          flushBlock();
+          currentBlock = { date: foundDateISO, texts: remainder ? [remainder] : [] };
+        } else if (currentBlock) {
+          if (ignoreNoise.test(line) && !amountRegex.test(line)) {
+            continue;
+          }
+          currentBlock.texts.push(line);
+        }
+      }
+      flushBlock();
+
+      return results;
+    }
+
+    function renderPdfImportPreviewModal(fileName, entries) {
+      const totalIn = round2(entries.filter(e => e.type === 'income').reduce((s, e) => s + e.amount, 0));
+      const totalOut = round2(entries.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0));
+
+      openModal(`
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="min-w-0 pr-2">
+              <span class="text-[10px] font-bold uppercase tracking-widest text-[#3E82F7]">PDF Statement Ready</span>
+              <h3 class="font-display text-xl font-extrabold truncate">${entries.length} Entries Found</h3>
+              <p class="text-[11px] text-zinc-400 truncate">${fileName}</p>
+            </div>
+            <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-[#1C1C1E] flex items-center justify-center text-zinc-400 shrink-0">✕</button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="p-3 rounded-[18px] bg-emerald-500/10 border border-emerald-500/20">
+              <p class="text-[10px] font-bold text-emerald-500 uppercase">Total Income</p>
+              <p class="font-display text-base font-extrabold text-emerald-500 mt-0.5">+${formatINR(totalIn)}</p>
+            </div>
+            <div class="p-3 rounded-[18px] bg-rose-500/10 border border-rose-500/20">
+              <p class="text-[10px] font-bold text-rose-500 uppercase">Total Expense</p>
+              <p class="font-display text-base font-extrabold text-rose-500 mt-0.5">-${formatINR(totalOut)}</p>
+            </div>
+          </div>
+
+          <div class="max-h-56 app-scroll space-y-2 pr-0.5">
+            ${entries.map(item => `
+              <div class="p-3 rounded-[16px] bg-zinc-100 dark:bg-[#1C1C1E] flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="text-xs font-bold truncate">${item.title}</p>
+                  <p class="text-[10px] text-zinc-400">${formatHumanDate(item.date)}</p>
+                </div>
+                <span class="font-display text-xs font-extrabold shrink-0 ${item.type === 'income' ? 'text-emerald-500' : 'text-rose-400'}">
+                  ${item.type === 'income' ? '+' : '-'}${formatINR(item.amount)}
+                </span>
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="flex gap-2.5 pt-1">
+            <button type="button" onclick="closeModal()" class="px-4 py-3.5 rounded-full bg-zinc-100 dark:bg-[#1C1C1E] text-xs font-bold">Cancel</button>
+            <button type="button" onclick="confirmImportPdfEntries()" class="flex-1 py-3.5 rounded-full bg-[#3E82F7] text-white text-sm font-bold shadow-lg">
+              Import All (${entries.length})
+            </button>
+          </div>
+        </div>
+      `);
+    }
+
+    window.confirmImportPdfEntries = async function () {
+      if (!pendingPdfImportEntries.length) return;
+      const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      // Import in reverse chronological order so newest stays on top
+      const ordered = [...pendingPdfImportEntries].reverse();
+      ordered.forEach((item, idx) => {
+        state.transactions.unshift({
+          id: 't_pdf_' + Date.now() + '_' + idx,
+          title: item.title,
+          amount: round2(item.amount),
+          myShare: item.type === 'expense' ? round2(item.amount) : 0,
+          isSplit: false,
+          splits: [],
+          type: item.type,
+          category: item.category,
+          upiApp: 'PDF Import',
+          dayOfWeek: getDayShort(item.date),
+          date: item.date,
+          time: nowTime,
+          note: 'Imported from mobile PDF statement'
+        });
+      });
+
+      const count = pendingPdfImportEntries.length;
+      pendingPdfImportEntries = [];
+      await persistState();
+      closeModal();
+      renderAll();
+      switchTab('home');
+      showToast('PDF Imported', `${count} entries added to Fintly`, 'emerald');
+    };
+
+    // -----------------------------------------------------------------------
+    // ADD DEBT / RECEIVABLE MODAL (ACCESSIBLE FROM SETTINGS & SPLIT DRAWER)
+    // -----------------------------------------------------------------------
+    window.openAddDebtReceivableModal = function (defaultDirection = 'owed_to_me') {
+      const todayStr = getTodayISO();
+      openModal(`
+        <form onsubmit="saveDebtReceivableFromModal(event)" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-widest text-sky-400">Split & Debt Ledger</span>
+              <h3 class="font-display text-xl font-extrabold">Add Debt / Receivable</h3>
+            </div>
+            <button type="button" onclick="closeModal()" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-[#1C1C1E] flex items-center justify-center text-zinc-400">✕</button>
+          </div>
+
+          <div class="p-1.5 rounded-full bg-zinc-100 dark:bg-[#1C1C1E] grid grid-cols-2 gap-1">
+            <button type="button" id="debt-dir-owed-to-me" onclick="setModalDebtDirection('owed_to_me')" class="py-2 rounded-full text-xs font-bold ${defaultDirection === 'owed_to_me' ? 'bg-sky-500 text-white' : 'text-zinc-400'}">
+              They Owe Me
+            </button>
+            <button type="button" id="debt-dir-i-owe" onclick="setModalDebtDirection('owe')" class="py-2 rounded-full text-xs font-bold ${defaultDirection === 'owe' ? 'bg-amber-500 text-zinc-950' : 'text-zinc-400'}">
+              I Owe Them
+            </button>
+          </div>
+          <input type="hidden" id="modal-debt-direction" value="${defaultDirection}" />
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Person Name</label>
+              <button type="button" onclick="openContactPickerModal('modal_debt')" class="text-xs font-bold text-[#3E82F7]">Pick Contact</button>
+            </div>
+            <input id="modal-debt-person" type="text" required placeholder="e.g., Lakshya, Naveen, Sagar..." class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-4 py-3 text-sm font-semibold focus:outline-none" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">Amount (₹)</label>
+            <div class="flex items-center bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-4 py-3">
+              <span class="text-xl font-extrabold text-zinc-400 mr-2">₹</span>
+              <input id="modal-debt-amount" type="number" step="any" inputmode="decimal" min="0.01" required placeholder="0.00" class="w-full bg-transparent font-display text-2xl font-extrabold focus:outline-none" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">Date</label>
+              <input id="modal-debt-date" type="date" value="${todayStr}" class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-3.5 py-3 text-xs font-bold focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">Reason / Note</label>
+              <input id="modal-debt-note" type="text" placeholder="e.g., Lunch, Tickets..." class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-3.5 py-3 text-xs font-medium focus:outline-none" />
+            </div>
+          </div>
+
+          <p id="modal-debt-hint" class="text-[11px] text-zinc-400">
+            ${defaultDirection === 'owed_to_me' ? 'Adds directly to "Owed to You" without changing your bank balance.' : 'Adds directly to "You Owe" in your Split Ledger.'}
+          </p>
+
+          <button type="submit" class="w-full py-4 rounded-full bg-[#3E82F7] text-white font-bold text-sm shadow-lg">
+            Save Entry
+          </button>
+        </form>
+      `);
+    };
+
+    window.setModalDebtDirection = function (dir) {
+      document.getElementById('modal-debt-direction').value = dir;
+      const b1 = document.getElementById('debt-dir-owed-to-me');
+      const b2 = document.getElementById('debt-dir-i-owe');
+      const hint = document.getElementById('modal-debt-hint');
+      if (dir === 'owed_to_me') {
+        b1.className = 'py-2 rounded-full text-xs font-bold bg-sky-500 text-white';
+        b2.className = 'py-2 rounded-full text-xs font-bold text-zinc-400';
+        hint.textContent = 'Adds directly to "Owed to You" without changing your bank balance.';
+      } else {
+        b1.className = 'py-2 rounded-full text-xs font-bold text-zinc-400';
+        b2.className = 'py-2 rounded-full text-xs font-bold bg-amber-500 text-zinc-950';
+        hint.textContent = 'Adds directly to "You Owe" in your Split Ledger.';
+      }
+    };
+
+    window.saveDebtReceivableFromModal = async function (e) {
+      e.preventDefault();
+      const dir = document.getElementById('modal-debt-direction').value;
+      const personInput = document.getElementById('modal-debt-person');
+      const personName = personInput.value.trim();
+      const amount = round2(document.getElementById('modal-debt-amount').value);
+      const date = document.getElementById('modal-debt-date').value || getTodayISO();
+      const note = document.getElementById('modal-debt-note').value.trim();
+
+      if (!personName || amount <= 0) return;
+
+      const matchedContact = state.contacts.find(c => c.name.toLowerCase() === personName.toLowerCase());
+      const contactId = personInput.dataset.contactId || (matchedContact ? matchedContact.id : null);
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      if (dir === 'owed_to_me') {
+        state.transactions.unshift({
+          id: 't_owed_' + Date.now(),
+          title: `${personName} owes me`,
+          amount,
+          myShare: 0,
+          isSplit: false,
+          splits: [],
+          contactId,
+          personName,
+          type: 'owed_to_me',
+          category: 'split',
+          upiApp: 'Receivable',
+          dayOfWeek: getDayShort(date),
+          date,
+          time: timeStr,
+          note
+        });
+      } else {
+        state.transactions.unshift({
+          id: 't_owe_' + Date.now(),
+          title: `${personName} (Paid for me)`,
+          amount,
+          myShare: amount,
+          isSplit: false,
+          splits: [],
+          paidByContactId: contactId,
+          paidByName: personName,
+          type: 'owe',
+          category: getExpenseCategories()[0]?.id || 'food_bev',
+          upiApp: 'Split',
+          dayOfWeek: getDayShort(date),
+          date,
+          time: timeStr,
+          note
+        });
+      }
+
+      await persistState();
+      closeModal();
+      renderAll();
+      showToast('Recorded', dir === 'owed_to_me' ? `${personName} owes you ${formatINR(amount)}` : `You owe ${personName} ${formatINR(amount)}`, 'emerald');
+    };
 
     // -----------------------------------------------------------------------
     // STATE & DUAL LOCAL + CLOUD FIRESTORE PERSISTENCE
@@ -1099,7 +1572,7 @@
     }
 
     // -----------------------------------------------------------------------
-    // PERSISTENT AUTHENTICATION (WITH SPINNER, TIMEOUT & LOCAL BYPASS)
+    // PERSISTENT AUTHENTICATION
     // -----------------------------------------------------------------------
     async function bootstrapAuthSession() {
       if (state.user && state.user.isAuthenticated) {
@@ -1373,6 +1846,9 @@
           if (weeklyMap[day] !== undefined) weeklyMap[day] = round2(weeklyMap[day] + amt);
           const p = ensurePerson(txn.paidByContactId, txn.paidByName || txn.title);
           p.net = round2(p.net - amt);
+        } else if (txn.type === 'owed_to_me') {
+          const p = ensurePerson(txn.contactId, txn.personName || txn.title);
+          p.net = round2(p.net + amt);
         } else if (txn.type === 'settle_in') {
           bankBalance = round2(bankBalance + amt);
           totalReceived = round2(totalReceived + amt);
@@ -1822,6 +2298,12 @@
           input.value = name;
           input.dataset.contactId = contactId;
         }
+      } else if (target === 'modal_debt') {
+        const input = document.getElementById('modal-debt-person');
+        if (input) {
+          input.value = name;
+          input.dataset.contactId = contactId;
+        }
       } else if (target === 'split') {
         addContactToSplit(contactId, name);
       }
@@ -1843,9 +2325,14 @@
               <span class="text-[10px] font-bold uppercase tracking-widest text-[#3E82F7]">Fintly Split</span>
               <h3 class="font-display text-xl font-extrabold">Split & Settle</h3>
             </div>
-            <button onclick="closeModal(); switchTab('add'); selectAddType('split');" class="px-3.5 py-1.5 rounded-full bg-[#3E82F7] text-white text-xs font-bold">
-              + Split Bill
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button onclick="openAddDebtReceivableModal('owed_to_me')" class="px-3 py-1.5 rounded-full bg-sky-500/15 text-sky-400 text-xs font-bold">
+                + Add Debt
+              </button>
+              <button onclick="closeModal(); switchTab('add'); selectAddType('split');" class="px-3 py-1.5 rounded-full bg-[#3E82F7] text-white text-xs font-bold">
+                + Split
+              </button>
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-2.5">
@@ -2040,7 +2527,7 @@
     function renderHistory() {
       const filtered = state.transactions.filter(t => {
         if (state.historyFilter === 'all') return true;
-        if (state.historyFilter === 'owe') return t.type === 'owe' || t.isSplit || t.type === 'settle_in' || t.type === 'settle_out';
+        if (state.historyFilter === 'owe') return t.type === 'owe' || t.type === 'owed_to_me' || t.isSplit || t.type === 'settle_in' || t.type === 'settle_out';
         if (state.historyFilter === 'income') return t.type === 'income' || t.type === 'settle_in';
         return t.type === state.historyFilter;
       });
@@ -2052,7 +2539,7 @@
         container.innerHTML = `
           <div class="squircle-card bg-white dark:bg-[#121212] border border-zinc-200 dark:border-[#262629] p-8 text-center space-y-2">
             <p class="text-sm font-bold">No transactions yet</p>
-            <p class="text-xs text-zinc-400">UPI payments appear here automatically, or add one in the Add tab.</p>
+            <p class="text-xs text-zinc-400">UPI payments appear here automatically, or import a PDF statement in Settings.</p>
           </div>
         `;
         return;
@@ -2060,11 +2547,18 @@
 
       container.innerHTML = filtered.map(txn => {
         const isIncome = txn.type === 'income' || txn.type === 'settle_in';
-        const fallbackIcon = isIncome ? '💰' : '💸';
-        const cat = state.categories.find(c => c.id === txn.category) || { icon: fallbackIcon, name: isIncome ? 'Income' : 'Expense', color: isIncome ? '#22C55E' : '#3E82F7' };
+        const isOwedToMe = txn.type === 'owed_to_me';
         const isOwe = txn.type === 'owe';
-        const amountColor = isIncome ? 'text-emerald-500' : isOwe ? 'text-amber-500' : 'text-zinc-900 dark:text-white';
-        const prefix = isIncome ? '+' : '-';
+
+        const fallbackIcon = isIncome ? '💰' : isOwedToMe ? '🤝' : '💸';
+        const cat = state.categories.find(c => c.id === txn.category) || {
+          icon: fallbackIcon,
+          name: isOwedToMe ? 'Receivable' : isIncome ? 'Income' : 'Expense',
+          color: isOwedToMe ? '#38BDF8' : isIncome ? '#22C55E' : '#3E82F7'
+        };
+
+        const amountColor = isIncome ? 'text-emerald-500' : isOwedToMe ? 'text-sky-400' : isOwe ? 'text-amber-500' : 'text-zinc-900 dark:text-white';
+        const prefix = (isIncome || isOwedToMe) ? '+' : '-';
 
         const splitBadge = txn.isSplit
           ? `<span class="px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-400 font-bold text-[10px]">Split (${txn.splits.length + 1}) • My share ${formatINR(txn.myShare)}</span>`
@@ -2122,14 +2616,14 @@
         <form onsubmit="saveEditedTransaction(event, '${txn.id}')" class="space-y-4">
           <div class="flex items-center justify-between">
             <div>
-              <span class="text-[11px] font-bold uppercase tracking-widest text-[#3E82F7]">Edit ${isIncome ? 'Income' : 'Expense'}</span>
+              <span class="text-[11px] font-bold uppercase tracking-widest text-[#3E82F7]">Edit Entry</span>
               <h3 class="font-display text-xl font-extrabold">${txn.title}</h3>
             </div>
             <span class="px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-[#1C1C1E] text-xs font-bold">${txn.upiApp}</span>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">${isIncome ? 'Source / Sender' : 'Title / Merchant'}</label>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">${isIncome ? 'Source / Sender' : 'Title / Person'}</label>
             <input id="edit-txn-title" type="text" value="${txn.title}" required class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-4 py-3 text-sm font-semibold focus:outline-none" />
           </div>
 
@@ -2139,7 +2633,7 @@
               <input id="edit-txn-amount" type="number" step="any" inputmode="decimal" min="0.01" value="${txn.amount}" oninput="recalcSplitDraftUI()" required class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-4 py-3 text-sm font-bold focus:outline-none" />
             </div>
             <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">${isIncome ? 'Income Category' : 'Expense Category'}</label>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">${isIncome ? 'Income Category' : 'Category'}</label>
               <input type="hidden" id="edit-txn-category-value" value="${selectedCat.id}" />
               <button type="button" onclick="openCustomCategoryPicker('edit', '${editCatType}')" class="w-full bg-zinc-100 dark:bg-[#1C1C1E] rounded-[18px] px-3 py-3 text-xs font-bold flex items-center justify-between gap-1 text-left">
                 <span id="edit-txn-category-display" class="truncate">${selectedCat.icon} ${selectedCat.name}</span>
@@ -2393,7 +2887,7 @@
     };
 
     // -----------------------------------------------------------------------
-    // ADD TAB LOGIC
+    // ADD TAB LOGIC (INCLUDING "OWED TO ME" DEBT TRACKING)
     // -----------------------------------------------------------------------
     window.selectAddType = function (type) {
       state.addFormType = type;
@@ -2402,11 +2896,12 @@
       bar.innerHTML = [
         { id: 'expense', label: 'Expense' },
         { id: 'income', label: 'Income' },
-        { id: 'owe', label: 'Paid For Me' },
-        { id: 'split', label: 'Group Split' }
+        { id: 'owed_to_me', label: 'Owed to Me' },
+        { id: 'owe', label: 'I Owe' },
+        { id: 'split', label: 'Split' }
       ].map(item => `
         <button type="button" onclick="selectAddType('${item.id}')" id="add-type-${item.id}"
-          class="py-2.5 px-1 rounded-[18px] text-[11px] transition-all ${type === item.id ? 'font-bold bg-[#3E82F7] text-white' : 'font-semibold text-zinc-500 dark:text-zinc-400'}">
+          class="py-2.5 px-1 rounded-[16px] text-[10px] transition-all ${type === item.id ? 'font-bold bg-[#3E82F7] text-white' : 'font-semibold text-zinc-500 dark:text-zinc-400'}">
           ${item.label}
         </button>
       `).join('');
@@ -2415,14 +2910,24 @@
       const titleLabel = document.getElementById('add-title-label');
       const titleInput = document.getElementById('add-title');
       const pickContactBtn = document.getElementById('add-pick-contact-btn');
+      const catWrapper = document.getElementById('add-category-wrapper');
+      const modeWrapper = document.getElementById('add-mode-wrapper');
 
       slot.innerHTML = '';
       pickContactBtn.classList.add('hidden');
+      catWrapper.classList.remove('hidden');
+      modeWrapper.classList.remove('hidden');
       document.getElementById('add-amount').oninput = null;
 
       syncAddCategoryDisplay();
 
-      if (type === 'owe') {
+      if (type === 'owed_to_me') {
+        titleLabel.textContent = 'Who Owes You?';
+        titleInput.placeholder = 'Enter person name or pick contact...';
+        pickContactBtn.classList.remove('hidden');
+        catWrapper.classList.add('hidden');
+        modeWrapper.classList.add('hidden');
+      } else if (type === 'owe') {
         titleLabel.textContent = 'Who Paid For You?';
         titleInput.placeholder = 'Enter name or pick from contacts...';
         pickContactBtn.classList.remove('hidden');
@@ -2475,7 +2980,27 @@
       if (!amount || amount <= 0 || !title) return;
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-      if (state.addFormType === 'split') {
+      if (state.addFormType === 'owed_to_me') {
+        const matchedContact = state.contacts.find(c => c.name.toLowerCase() === title.toLowerCase());
+        state.transactions.unshift({
+          id: 't_owed_' + Date.now(),
+          title: `${title} owes me`,
+          amount,
+          myShare: 0,
+          isSplit: false,
+          splits: [],
+          contactId: titleInput.dataset.contactId || (matchedContact ? matchedContact.id : null),
+          personName: title,
+          type: 'owed_to_me',
+          category: 'split',
+          upiApp: 'Receivable',
+          dayOfWeek: getDayShort(date),
+          date,
+          time: timeStr,
+          note
+        });
+        delete titleInput.dataset.contactId;
+      } else if (state.addFormType === 'split') {
         if (!activeSplitDraft.participants.length) {
           showToast('Add Friends', 'Add at least 1 person to split with', 'amber');
           return;
@@ -2560,6 +3085,8 @@
       const phoneLabel = state.user.phone ? `+91 ${state.user.phone}` : (state.user.email || 'Cloud Active');
       document.getElementById('settings-profile-sub').textContent = `${phoneLabel} • ${state.contacts.length} contacts`;
       document.getElementById('settings-balance-preview').textContent = formatINR(metrics.bankBalance);
+      const recvPreview = document.getElementById('settings-receivable-preview');
+      if (recvPreview) recvPreview.textContent = formatINR(metrics.owedToYouTotal);
       document.getElementById('settings-cat-count').textContent = `${getExpenseCategories().length} exp • ${getIncomeCategories().length} inc`;
 
       const effectiveBudget = getEffectiveMonthlyBudget();
